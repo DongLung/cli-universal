@@ -1,82 +1,80 @@
-FROM ubuntu:24.04
+FROM registry.access.redhat.com/ubi10:latest
 
 ARG TARGETOS
 ARG TARGETARCH
 
 ENV LANG="C.UTF-8"
 ENV HOME=/root
-ENV DEBIAN_FRONTEND=noninteractive
 
 ### BASE ###
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends --allow-change-held-packages \
-        ca-certificates=20240203* \
-        curl=8.5.* \
-        wget=1.21.* \
-        git=1:2.43.* \
-        binutils=2.42-* \
-        sudo=1.9.* \
-        build-essential=12.10* \
-        bzr=2.7.* \
-        default-libmysqlclient-dev=1.1.* \
-        dnsutils=1:9.18.* \
-        fd-find=9.0.* \
-        fzf=0.44.* \
-        gettext=0.21-* \
-        git-lfs=3.4.* \
-        gnupg=2.4.* \
-        inotify-tools=3.22.* \
-        iputils-ping=3:20240117-* \
-        jq=1.7.* \
-        libbz2-dev=1.0.* \
-        libc6=2.39-* \
-        libc6-dev=2.39-* \
-        libcurl4-openssl-dev=8.5.* \
-        libdb-dev=1:5.3.* \
-        libedit2=3.1-* \
-        libffi-dev=3.4.* \
-        libgcc-13-dev=13.3.* \
-        libgdbm-compat-dev=1.23-* \
-        libgdbm-dev=1.23-* \
-        libgdiplus=6.1+dfsg-* \
-        libgssapi-krb5-2=1.20.* \
-        liblzma-dev=5.6.* \
-        libncurses-dev=6.4+20240113-* \
-        libnss3-dev=2:3.98-* \
-        libpq-dev \
-        libpsl-dev=0.21.* \
-        libpython3-dev=3.12.* \
-        libreadline-dev=8.2-* \
-        libsqlite3-dev=3.45.* \
-        libssl-dev=3.0.* \
-        libstdc++-13-dev=13.3.* \
-        libunwind8=1.6.* \
-        libuuid1=2.39.* \
-        libxml2-dev=2.9.* \
-        libz3-dev=4.8.* \
-        make=4.3-* \
-        moreutils=0.69-* \
-        netcat-openbsd=1.226-* \
-        openssh-client=1:9.6p1-* \
-        pkg-config=1.8.* \
-        protobuf-compiler=3.21.* \
-        ripgrep=14.1.* \
-        rsync=3.2.* \
-        software-properties-common=0.99.* \
-        sqlite3=3.45.* \
-        swig3.0=3.0.* \
-        tk-dev=8.6.* \
-        tzdata=2025b-* \
-        universal-ctags=5.9.* \
-        unixodbc-dev=2.3.* \
-        unzip=6.0-* \
-        uuid-dev=2.39.* \
-        xz-utils=5.6.* \
-        zip=3.0-* \
-        zlib1g=1:1.3.* \
-        zlib1g-dev=1:1.3.* \
-    && rm -rf /var/lib/apt/lists/*
+RUN dnf install -y \
+        ca-certificates \
+        curl \
+        wget \
+        git \
+        git-lfs \
+        binutils \
+        sudo \
+        gcc \
+        gcc-c++ \
+        make \
+        cmake \
+        autoconf \
+        automake \
+        libtool \
+        bzr \
+        mariadb-devel \
+        bind-utils \
+        fd-find \
+        fzf \
+        gettext \
+        gnupg2 \
+        inotify-tools \
+        iputils \
+        jq \
+        bzip2-devel \
+        glibc \
+        glibc-devel \
+        libcurl-devel \
+        libdb-devel \
+        libedit \
+        libffi-devel \
+        gdbm-devel \
+        krb5-libs \
+        xz-devel \
+        ncurses-devel \
+        nss-devel \
+        libpq-devel \
+        libpsl-devel \
+        python3-devel \
+        readline-devel \
+        sqlite-devel \
+        openssl-devel \
+        libstdc++-devel \
+        libunwind \
+        libuuid \
+        libxml2-devel \
+        moreutils \
+        nmap-ncat \
+        openssh-clients \
+        pkgconfig \
+        protobuf-compiler \
+        ripgrep \
+        rsync \
+        sqlite \
+        swig \
+        tk-devel \
+        tzdata \
+        ctags \
+        unixODBC-devel \
+        unzip \
+        uuid-devel \
+        xz \
+        zip \
+        zlib \
+        zlib-devel \
+    && dnf clean all
 
 ### COMMON CLI UTILITIES ###
 
