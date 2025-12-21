@@ -88,6 +88,7 @@ ARG PYTHON_VERSIONS="3.12 3.13 3.14.0"
 # Reduce the verbosity of uv - impacts performance of stdout buffering
 ENV UV_NO_PROGRESS=1
 
+# Install uv with checksum verification (checksums are for uv 0.9.18)
 RUN install -d -m 0755 "$UV_HOME" \
     && UV_VERSION=0.9.18 \
     && case "$TARGETARCH" in \
@@ -98,9 +99,10 @@ RUN install -d -m 0755 "$UV_HOME" \
     && UV_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}.tar.gz" \
     && curl -LsSf -o /tmp/uv.tar.gz "$UV_URL" \
     && echo "${UV_CHECKSUM}  /tmp/uv.tar.gz" | sha256sum -c - \
-    && tar -xzf /tmp/uv.tar.gz -C /tmp \
-    && install -m 0755 /tmp/uv-${UV_ARCH}/uv "$UV_HOME/.local/bin/uv" \
-    && rm -rf /tmp/uv.tar.gz /tmp/uv-${UV_ARCH} \
+    && mkdir -p /tmp/uv-extract \
+    && tar -xzf /tmp/uv.tar.gz -C /tmp/uv-extract --strip-components=1 \
+    && install -m 0755 /tmp/uv-extract/uv "$UV_HOME/.local/bin/uv" \
+    && rm -rf /tmp/uv.tar.gz /tmp/uv-extract \
     && ln -sf "$UV_HOME/.local/bin/uv" /usr/local/bin/uv \
     && HOME=$UV_HOME uv python install $PYTHON_VERSIONS \
     && PYTHON_DEFAULT=${PYTHON_VERSIONS%% *} \
