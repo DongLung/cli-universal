@@ -25,6 +25,7 @@ RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-10.
         unzip \
         xz \
         nodejs \
+    && dnf update -y \
     && dnf clean all
 
 ### COMMON CLI UTILITIES ###
