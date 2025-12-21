@@ -10,19 +10,20 @@ ENV DEBIAN_FRONTEND=noninteractive
 ### BASE ###
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get install -y --no-install-recommends --allow-change-held-packages \
+        ca-certificates=20240203* \
+        curl=8.5.* \
+        wget=1.21.* \
+        git=1:2.43.* \
         binutils=2.42-* \
         sudo=1.9.* \
         build-essential=12.10* \
-        ca-certificates=20240203* \
         bzr=2.7.* \
-        curl=8.5.* \
         default-libmysqlclient-dev=1.1.* \
         dnsutils=1:9.18.* \
         fd-find=9.0.* \
         fzf=0.44.* \
         gettext=0.21-* \
-        git=1:2.43.* \
         git-lfs=3.4.* \
         gnupg=2.4.* \
         inotify-tools=3.22.* \
@@ -71,7 +72,6 @@ RUN apt-get update \
         unixodbc-dev=2.3.* \
         unzip=6.0-* \
         uuid-dev=2.39.* \
-        wget=1.21.* \
         xz-utils=5.6.* \
         zip=3.0-* \
         zlib1g=1:1.3.* \
