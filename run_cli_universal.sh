@@ -6,7 +6,6 @@ set -euo pipefail
 ########################################
 IMAGE_BASE="${IMAGE_BASE:-cli-universal:python}"
 CODEX_ENV_PYTHON_VERSION="${CODEX_ENV_PYTHON_VERSION:-3.12}"
-CODEX_ENV_NODE_VERSION="${CODEX_ENV_NODE_VERSION:-22}"
 IMAGE="${IMAGE:-${IMAGE_BASE}${CODEX_ENV_PYTHON_VERSION}}"
 
 ########################################
@@ -110,14 +109,12 @@ echo "[run] IMAGE=$IMAGE"
 echo "[run] Workspace=$WORKDIR"
 echo "[run] Language versions:"
 echo "  Python=$CODEX_ENV_PYTHON_VERSION"
-echo "  Node=$CODEX_ENV_NODE_VERSION"
 if [ -n "$BACKUP_TAG" ]; then
   echo "[run] Existing image preserved as: $BACKUP_TAG"
 fi
 
 podman run --rm -it \
   -e CODEX_ENV_PYTHON_VERSION="$CODEX_ENV_PYTHON_VERSION" \
-  -e CODEX_ENV_NODE_VERSION="$CODEX_ENV_NODE_VERSION" \
   ${OPENAI_API_KEY:+-e "OPENAI_API_KEY=$OPENAI_API_KEY"} \
   ${GITHUB_TOKEN:+-e "GITHUB_TOKEN=$GITHUB_TOKEN"} \
   ${GEMINI_API_KEY:+-e "GEMINI_API_KEY=$GEMINI_API_KEY"} \

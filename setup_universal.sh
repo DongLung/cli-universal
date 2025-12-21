@@ -21,8 +21,8 @@ if [ -n "${CODEX_ENV_NODE_VERSION}" ]; then
     current=$(node -v | cut -d. -f1)   # ==> v20
     echo "# Node.js: v${CODEX_ENV_NODE_VERSION} (default: ${current})"
     if [ "${current}" != "v${CODEX_ENV_NODE_VERSION}" ]; then
-        nvm alias default "${CODEX_ENV_NODE_VERSION}"
-        nvm use "${CODEX_ENV_NODE_VERSION}"
+        #nvm alias default "${CODEX_ENV_NODE_VERSION}"
+        #nvm use "${CODEX_ENV_NODE_VERSION}"
         corepack enable
     fi
 fi

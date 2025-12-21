@@ -15,11 +15,11 @@ uv --version
 
 echo "- Node.js:"
 for version in "20" "22"; do
-    nvm use --global "${version}"
+    #nvm use --global "${version}"
     node --version
     npm --version
-    pnpm --version
-    yarn --version
+    #pnpm --version
+    #yarn --version
 done
 
 echo "- CLI utilities:"
