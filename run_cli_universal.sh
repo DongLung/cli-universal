@@ -79,7 +79,7 @@ fi
 POST_SETUP_CMD='
   set -e
 
-  # npm global 設定（避免 NPM_CONFIG_PREFIX 與 nvm 衝突）
+  # npm global settings (to avoid NPM_CONFIG_PREFIX conflicts with nvm)
   npm config --global set prefix /opt/npm-global
   npm config --global set cache  /opt/npm-cache
   export PATH="/opt/npm-global/bin:$PATH"
