@@ -60,6 +60,23 @@ RUN install -d -m 0755 "$UV_HOME" \
     && HOME=$UV_HOME uv tool install isort \
     && HOME=$UV_HOME uv tool install pytest
 
+### NODE.js CLI TOOLS ###
+
+ENV NPM_CONFIG_PREFIX=/opt/npm-global
+ENV PATH=/opt/npm-global/bin:$PATH
+
+# Install Codex, Copilot, and Gemini CLI tools
+RUN npm install -g --no-fund \
+        @openai/codex@latest \
+        @github/copilot@latest \
+        @google/gemini-cli@latest \
+    && npm cache clean --force
+
+### FINAL SECURITY UPDATE ###
+
+# Apply all security updates one more time
+RUN dnf update -y && dnf clean all
+
 ### SETUP SCRIPTS ###
 
 COPY setup_universal.sh /opt/codex/setup_universal.sh

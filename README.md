@@ -31,11 +31,25 @@ Timezone automatically follows the host if `/etc/timezone` is mounted.
 
 ```bash
 podman run --rm -it \
+  -e CLI_TOOL=codex \
   -e CODEX_ENV_PYTHON_VERSION=3.12 \
+  -e OPENAI_API_KEY="your-openai-api-key" \
   -v /etc/localtime:/etc/localtime:ro \
-  -v /etc/timezone:/etc/timezone:ro \
-  -v $(pwd):/workspace/$(basename $(pwd)) -w /workspace/$(basename $(pwd)) \
+  -v npm-global:/opt/npm-global \
+  -v npm-cache:/opt/npm-cache \
+  -v ai-codex-home:/root/.codex \
+  -v ai-copilot-home:/root/.copilot \
+  -v ai-gemini-home:/root/.gemini \
+  -v $(pwd):/workspace/$(basename $(pwd)) \
+  -w /workspace/$(basename $(pwd)) \
   cli-universal:python3.12
+
+  CLI_TOOL options:
+    codex     - Launch Codex CLI
+    copilot   - Launch GitHub Copilot CLI
+    gemini    - Launch Gemini CLI
+    bash      - Launch Bash shell
+    (default) - Interactive menu to choose tool
 ```
 
 ## Building
