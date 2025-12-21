@@ -6,49 +6,25 @@ echo "Verifying language runtimes ..."
 
 echo "- Python:"
 python3 --version
-pyenv versions | sed 's/^/  /'
+for version in "3.12" "3.13" "3.14.0"; do
+    uv run --python "${version}" -- python --version
+done
+
+echo "- uv:"
+uv --version
 
 echo "- Node.js:"
-for version in "18" "20" "22"; do
+for version in "20" "22"; do
     nvm use --global "${version}"
     node --version
     npm --version
     pnpm --version
     yarn --version
-    npm ls -g
 done
 
-echo "- Bun:"
-bun --version
+echo "- CLI utilities:"
+rg --version
+fzf --version
+git --version
 
-echo "- Java / Gradle:"
-java -version
-javac -version
-gradle --version | head -n 3
-mvn --version | head -n 1
-
-if [ "$TARGETARCH" = "amd64" ]; then \
-    echo "- Swift:"
-    swift --version
-fi
-
-echo "- Ruby:"
-ruby --version
-
-echo "- Rust:"
-rustc --version
-cargo --version
-
-echo "- Go:"
-go version
-
-echo "- PHP:"
-php --version
-composer --version
-
-echo "- Elixir:"
-elixir --version
-erl -version
-erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell
-
-echo "All language runtimes detected successfully."
+echo "All tooling detected successfully."
