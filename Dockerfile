@@ -43,7 +43,7 @@ RUN apt-get update \
         liblzma-dev=5.6.* \
         libncurses-dev=6.4+20240113-* \
         libnss3-dev=2:3.98-* \
-        libpq-dev=16.10-* \
+        libpq-dev \
         libpsl-dev=0.21.* \
         libpython3-dev=3.12.* \
         libreadline-dev=8.2-* \
@@ -88,8 +88,7 @@ ARG PYTHON_VERSIONS="3.12 3.13 3.14.0"
 # Reduce the verbosity of uv - impacts performance of stdout buffering
 ENV UV_NO_PROGRESS=1
 
-# Install uv with checksum verification (checksums are for uv 0.9.18)
-# Check if uv is already available in the base image first
+# Install uv using the official recommended method
 RUN install -d -m 0755 "$UV_HOME" \
     && if command -v uv >/dev/null 2>&1; then \
         echo "Using existing uv installation from base image" \
@@ -97,27 +96,21 @@ RUN install -d -m 0755 "$UV_HOME" \
         && ln -sf "$UV_PATH" "$UV_HOME/.local/bin/uv" \
         && ln -sf "$UV_PATH" /usr/local/bin/uv; \
     else \
-        echo "Installing uv from GitHub releases" \
-        && UV_VERSION=0.9.18 \
-        && case "$TARGETARCH" in \
-            amd64) UV_ARCH="x86_64-unknown-linux-gnu" UV_CHECKSUM="bebbfd4942c6d08f107eb26937c0c3cbe8a27013e61f2af95e9df0213b7f3ba6" ;; \
-            arm64) UV_ARCH="aarch64-unknown-linux-gnu" UV_CHECKSUM="f1284d52d013e6cf045325f8c248fbafed83d9b12759f0b8ecce626dde3c03f7" ;; \
-            *) echo "Unsupported architecture: $TARGETARCH" && exit 1 ;; \
-        esac \
-        && UV_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}.tar.gz" \
-        && curl -LsSf -o /tmp/uv.tar.gz "$UV_URL" \
-        && echo "${UV_CHECKSUM}  /tmp/uv.tar.gz" | sha256sum -c - \
-        && mkdir -p /tmp/uv-extract \
-        && tar -xzf /tmp/uv.tar.gz -C /tmp/uv-extract --strip-components=1 \
-        && install -m 0755 /tmp/uv-extract/uv "$UV_HOME/.local/bin/uv" \
-        && rm -rf /tmp/uv.tar.gz /tmp/uv-extract \
+        echo "Installing uv using official installer" \
+        && curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$UV_HOME/.local/bin" sh \
         && ln -sf "$UV_HOME/.local/bin/uv" /usr/local/bin/uv; \
     fi \
     && HOME=$UV_HOME uv python install $PYTHON_VERSIONS \
     && PYTHON_DEFAULT=${PYTHON_VERSIONS%% *} \
     && PYTHON_DEFAULT_PATH="$(HOME=$UV_HOME uv python find "$PYTHON_DEFAULT")" \
     && ln -sf "$PYTHON_DEFAULT_PATH" /usr/local/bin/python3 \
-    && HOME=$UV_HOME uv tool install poetry==2.1.* ruff black mypy pyright isort pytest
+    && HOME=$UV_HOME uv tool install poetry==2.1.* \
+    && HOME=$UV_HOME uv tool install ruff \
+    && HOME=$UV_HOME uv tool install black \
+    && HOME=$UV_HOME uv tool install mypy \
+    && HOME=$UV_HOME uv tool install pyright \
+    && HOME=$UV_HOME uv tool install isort \
+    && HOME=$UV_HOME uv tool install pytest
 
 ### NODE ###
 
