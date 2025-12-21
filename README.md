@@ -1,69 +1,71 @@
-# codex-universal
+# cli-universal
 
-`codex-universal` is a reference implementation of the base Docker image available in [OpenAI Codex](http://platform.openai.com/docs/codex).
+`cli-universal` is a slim base image tuned for the GitHub Copilot CLI, Gemini CLI, and Codex CLI flows. It ships only the runtimes those tools need (Python and Node.js) plus a few shell-friendly utilities.
 
-This repository is intended to help developers cutomize environments in Codex, by providing a similar image that can be pulled and run locally. This is not an identical environment but should help for debugging and development.
+## Runtimes and tools
 
-For more details on environment setup, see [OpenAI Codex](http://platform.openai.com/docs/codex).
+| Runtime / tool | Details |
+| --- | --- |
+| Python | 3.12 / 3.13 / 3.14 (installed via `uv`; default symlinked to `python3`) |
+| Node.js | 20 / 22 (managed via `nvm` with npm, yarn, pnpm enabled) |
+| Common CLI | `uv`, `fzf`, `ripgrep`, `git`, `curl`, `jq`, etc. |
 
-## Usage
+The entrypoint honors these environment variables at runtime:
 
-The Docker image is available at:
+| Variable | Meaning |
+| --- | --- |
+| `CODEX_ENV_PYTHON_VERSION` | Selects one of the bundled Python versions (default: 3.12). |
+| `CODEX_ENV_NODE_VERSION` | Selects one of the bundled Node.js versions (default: 22). |
 
-```
-docker pull ghcr.io/openai/codex-universal:latest
-```
+Timezone automatically follows the host if `/etc/timezone` is mounted.
 
-This repository builds the image for both linux/amd64 and linux/arm64. However we only run the linux/amd64 version.
-Your installed Docker may support linux/amd64 emulation by passing the `--platform linux/amd64` flag.
+## Running the image
 
-The arm64 image differs from the amd64 image in 2 ways:
-- OpenJDK 10 is not available on amd64
-- The arm64 image skips installing swift because of a current bug with mise
-
-The below script shows how can you approximate the `setup` environment in Codex:
-
-```sh
-# See below for environment variable options.
-# This script mounts the current directory similar to how it would get cloned in.
+```bash
 docker run --rm -it \
-    -e CODEX_ENV_PYTHON_VERSION=3.12 \
-    -e CODEX_ENV_NODE_VERSION=20 \
-    -e CODEX_ENV_RUST_VERSION=1.87.0 \
-    -e CODEX_ENV_GO_VERSION=1.23.8 \
-    -e CODEX_ENV_SWIFT_VERSION=6.2 \
-    -e CODEX_ENV_RUBY_VERSION=3.4.4 \
-    -e CODEX_ENV_PHP_VERSION=8.4 \
-    -v $(pwd):/workspace/$(basename $(pwd)) -w /workspace/$(basename $(pwd)) \
-    ghcr.io/openai/codex-universal:latest
+  -e CODEX_ENV_PYTHON_VERSION=3.12 \
+  -e CODEX_ENV_NODE_VERSION=22 \
+  -v /etc/localtime:/etc/localtime:ro \
+  -v /etc/timezone:/etc/timezone:ro \
+  -v $(pwd):/workspace/$(basename $(pwd)) -w /workspace/$(basename $(pwd)) \
+  cli-universal:python3.12
 ```
 
-`codex-universal` includes setup scripts that look for `CODEX_ENV_*` environment variables and configures the language version accordingly.
+## Building
 
-### Configuring language runtimes
+Bundled versions:
 
-The following environment variables can be set to configure runtime installation. Note that a limited subset of versions are supported (indicated in the table below):
+- Python: 3.12, 3.13, 3.14.0 (via `uv`)
+- Node.js: 20, 22 (with npm 11.4.x and yarn/pnpm via corepack)
 
-| Environment variable       | Description                | Supported versions                               | Additional packages                                                  |
-| -------------------------- | -------------------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
-| `CODEX_ENV_PYTHON_VERSION` | Python version to install  | `3.10`, `3.11.12`, `3.12`, `3.13`, `3.14.0`        | `pyenv`, `poetry`, `uv`, `ruff`, `black`, `mypy`, `pyright`, `isort` |
-| `CODEX_ENV_NODE_VERSION`   | Node.js version to install | `18`, `20`, `22`                                 | `corepack`, `yarn`, `pnpm`, `npm`                                    |
-| `CODEX_ENV_RUST_VERSION`   | Rust version to install    | `1.83.0`, `1.84.1`, `1.85.1`, `1.86.0`, `1.87.0` |                                                                      |
-| `CODEX_ENV_GO_VERSION`     | Go version to install      | `1.22.12`, `1.23.8`, `1.24.3`, `1.25.1`           |                                                                      |
-| `CODEX_ENV_SWIFT_VERSION`  | Swift version to install   | `5.10`, `6.1`, `6.2`                              |                                                                      |
-| `CODEX_ENV_RUBY_VERSION`   | Ruby version to install  | `3.2.3`, `3.3.8`, `3.4.4`                |                                                                      |
-| `CODEX_ENV_PHP_VERSION`   | PHP version to install  | `8.4`, `8.3`, `8.2`                |                                                                      |
+Recommended tag format: `cli-universal:python<version>` (e.g., `cli-universal:python3.12`).
 
+Build for both amd64 and arm64 with Podman:
 
+```bash
+podman build --platform linux/amd64,linux/arm64 \
+  -t cli-universal:python3.12 .
+```
 
-## What's included
+> Note: the image is intended for local builds; retag as needed if you publish to your own registry.
 
-In addition to the packages specified in the table above, the following packages are also installed:
+See the [Dockerfile](Dockerfile) for the full package list and build steps.
 
-- `bun`: 1.2.10
-- `java`: 21
-- `bazelisk` / `bazel`
-- `erlang`: 27.1.2
-- `elixir`: 1.18.3
+### Version selection
 
-See [Dockerfile](Dockerfile) for the full details of installed packages.
+| Environment variable       | Description                     | Supported versions                  |
+| -------------------------- | -------------------------------- | ----------------------------------- |
+| `CODEX_ENV_PYTHON_VERSION` | Python version to activate      | `3.12`, `3.13`, `3.14.0`            |
+| `CODEX_ENV_NODE_VERSION`   | Node.js version to activate     | `20`, `22`                          |
+
+## Automated builds
+
+Pushes to `main` (or manual dispatches) will build and push multi-arch images to Docker Hub using GitHub Actions. Configure these repository settings before enabling the workflow:
+
+- Repository variable: `DOCKERHUB_IMAGE` (e.g., `your-dockerhub-username/cli-universal`)
+- Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
+
+The workflow publishes tags:
+
+- `latest`
+- `python3.12` (update the workflow `PYTHON_TAG` env if you change the default Python)
