@@ -89,7 +89,18 @@ ARG PYTHON_VERSIONS="3.12 3.13 3.14.0"
 ENV UV_NO_PROGRESS=1
 
 RUN install -d -m 0755 "$UV_HOME" \
-    && HOME=$UV_HOME curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && UV_VERSION=0.9.18 \
+    && case "$TARGETARCH" in \
+        amd64) UV_ARCH="x86_64-unknown-linux-gnu" UV_CHECKSUM="bebbfd4942c6d08f107eb26937c0c3cbe8a27013e61f2af95e9df0213b7f3ba6" ;; \
+        arm64) UV_ARCH="aarch64-unknown-linux-gnu" UV_CHECKSUM="f1284d52d013e6cf045325f8c248fbafed83d9b12759f0b8ecce626dde3c03f7" ;; \
+        *) echo "Unsupported architecture: $TARGETARCH" && exit 1 ;; \
+    esac \
+    && UV_URL="https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-${UV_ARCH}.tar.gz" \
+    && curl -LsSf -o /tmp/uv.tar.gz "$UV_URL" \
+    && echo "${UV_CHECKSUM}  /tmp/uv.tar.gz" | sha256sum -c - \
+    && tar -xzf /tmp/uv.tar.gz -C /tmp \
+    && install -m 0755 /tmp/uv-${UV_ARCH}/uv "$UV_HOME/.local/bin/uv" \
+    && rm -rf /tmp/uv.tar.gz /tmp/uv-${UV_ARCH} \
     && ln -sf "$UV_HOME/.local/bin/uv" /usr/local/bin/uv \
     && HOME=$UV_HOME uv python install $PYTHON_VERSIONS \
     && PYTHON_DEFAULT=${PYTHON_VERSIONS%% *} \
