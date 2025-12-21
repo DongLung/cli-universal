@@ -22,7 +22,7 @@ Timezone automatically follows the host if `/etc/timezone` is mounted.
 ## Running the image
 
 ```bash
-docker run --rm -it \
+podman run --rm -it \
   -e CODEX_ENV_PYTHON_VERSION=3.12 \
   -e CODEX_ENV_NODE_VERSION=22 \
   -v /etc/localtime:/etc/localtime:ro \

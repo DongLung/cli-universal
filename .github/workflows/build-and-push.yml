@@ -36,14 +36,37 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKERHUB_IMAGE }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=${{ env.PYTHON_TAG }}
+          labels: |
+            org.opencontainers.image.title=cli-universal
+            org.opencontainers.image.description=Slim base image for GitHub Copilot CLI, Gemini CLI, and Codex CLI
+            org.opencontainers.image.source=https://github.com/DongLung/CopilotCli
+            org.opencontainers.image.vendor=Codex
+            io.github.category=codex,copilot-cli,gemini-cli
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ env.DOCKERHUB_IMAGE }}:latest
-            ${{ env.DOCKERHUB_IMAGE }}:${{ env.PYTHON_TAG }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ env.DOCKERHUB_IMAGE }}
+          readme-filepath: ./README.md
+          short-description: "Slim base image for GitHub Copilot CLI, Gemini CLI, and Codex CLI"
