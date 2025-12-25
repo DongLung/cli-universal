@@ -95,4 +95,4 @@ RUN chmod +x /opt/menu.sh
 COPY entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
-ENTRYPOINT  ["/opt/entrypoint.sh"]
+CMD  ["/opt/entrypoint.sh"]
