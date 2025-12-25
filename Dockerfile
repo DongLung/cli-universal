@@ -89,6 +89,9 @@ RUN chmod +x /opt/verify.sh && bash -lc "TARGETARCH=$TARGETARCH /opt/verify.sh"
 
 ### ENTRYPOINT ###
 
+COPY menu.sh /opt/menu.sh
+RUN chmod +x /opt/menu.sh
+
 COPY entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
 
