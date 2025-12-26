@@ -34,6 +34,7 @@ podman run --rm -it \
   -e CLI_TOOL=codex \
   -e CODEX_ENV_PYTHON_VERSION=3.12 \
   -e OPENAI_API_KEY="your-openai-api-key" \
+  -p 1455:1455 \
   -v /etc/localtime:/etc/localtime:ro \
   -v npm-global:/opt/npm-global \
   -v npm-cache:/opt/npm-cache \

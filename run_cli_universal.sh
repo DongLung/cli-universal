@@ -257,6 +257,7 @@ podman run --rm -it \
   ${OPENAI_API_KEY:+-e "OPENAI_API_KEY=$OPENAI_API_KEY"} \
   ${GITHUB_TOKEN:+-e "GITHUB_TOKEN=$GITHUB_TOKEN"} \
   ${GEMINI_API_KEY:+-e "GEMINI_API_KEY=$GEMINI_API_KEY"} \
+  -p 1455:1455 \
   -v /etc/localtime:/etc/localtime:ro \
   -v "${VOL_NPM_GLOBAL}:/opt/npm-global" \
   -v "${VOL_NPM_CACHE}:/opt/npm-cache" \

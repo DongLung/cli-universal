@@ -53,6 +53,7 @@ jobs:
 
       - name: Build and push
         uses: docker/build-push-action@v6
+        id: build
         with:
           context: .
           file: ./Dockerfile
@@ -64,6 +65,33 @@ jobs:
           cache-to: type=gha,mode=max
           provenance: false
           sbom: false
+
+      - name: Extract CLI versions from image
+        id: versions
+        run: |
+          # Pull the built image
+          docker pull ${{ env.DOCKERHUB_IMAGE }}:latest
+          
+          # Extract versions from the container
+          CODEX_VERSION=$(docker run --rm ${{ env.DOCKERHUB_IMAGE }}:latest cat /opt/versions/codex.txt 2>/dev/null | head -n1 || echo "unknown")
+          COPILOT_VERSION=$(docker run --rm ${{ env.DOCKERHUB_IMAGE }}:latest cat /opt/versions/copilot.txt 2>/dev/null | head -n1 || echo "unknown")
+          GEMINI_VERSION=$(docker run --rm ${{ env.DOCKERHUB_IMAGE }}:latest cat /opt/versions/gemini.txt 2>/dev/null | head -n1 || echo "unknown")
+          
+          echo "codex_version=${CODEX_VERSION}" >> $GITHUB_OUTPUT
+          echo "copilot_version=${COPILOT_VERSION}" >> $GITHUB_OUTPUT
+          echo "gemini_version=${GEMINI_VERSION}" >> $GITHUB_OUTPUT
+          
+          echo "Detected versions:"
+          echo "  Codex: ${CODEX_VERSION}"
+          echo "  Copilot: ${COPILOT_VERSION}"
+          echo "  Gemini: ${GEMINI_VERSION}"
+
+      - name: Update README with CLI versions
+        run: |
+          # Create a temporary README with version information
+          sed -i "s/| Codex CLI | \`@openai\/codex\` | latest |/| Codex CLI | \`@openai\/codex\` | ${{ steps.versions.outputs.codex_version }} |/" README.md
+          sed -i "s/| GitHub Copilot CLI | \`@github\/copilot\` | latest |/| GitHub Copilot CLI | \`@github\/copilot\` | ${{ steps.versions.outputs.copilot_version }} |/" README.md
+          sed -i "s/| Gemini CLI | \`@google\/gemini-cli\` | latest |/| Gemini CLI | \`@google\/gemini-cli\` | ${{ steps.versions.outputs.gemini_version }} |/" README.md
 
       - name: Update Docker Hub description
         uses: peter-evans/dockerhub-description@v4

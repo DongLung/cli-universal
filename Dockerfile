@@ -70,7 +70,11 @@ RUN npm install -g --no-fund \
         @openai/codex@latest \
         @github/copilot@latest \
         @google/gemini-cli@latest \
-    && npm cache clean --force
+    && npm cache clean --force \
+    && mkdir -p /opt/versions \
+    && codex --version > /opt/versions/codex.txt 2>&1 || echo "unknown" > /opt/versions/codex.txt \
+    && copilot --version > /opt/versions/copilot.txt 2>&1 || echo "unknown" > /opt/versions/copilot.txt \
+    && gemini --version > /opt/versions/gemini.txt 2>&1 || echo "unknown" > /opt/versions/gemini.txt
 
 ### FINAL SECURITY UPDATE ###
 
@@ -94,5 +98,18 @@ RUN chmod +x /opt/menu.sh
 
 COPY entrypoint.sh /opt/entrypoint.sh
 RUN chmod +x /opt/entrypoint.sh
+
+### VERSION LABELS ###
+
+RUN CODEX_VERSION=$(cat /opt/versions/codex.txt | head -n1) && \
+    COPILOT_VERSION=$(cat /opt/versions/copilot.txt | head -n1) && \
+    GEMINI_VERSION=$(cat /opt/versions/gemini.txt | head -n1) && \
+    echo "LABEL io.github.cli.codex.version=\"${CODEX_VERSION}\"" > /opt/versions/labels.dockerfile && \
+    echo "LABEL io.github.cli.copilot.version=\"${COPILOT_VERSION}\"" >> /opt/versions/labels.dockerfile && \
+    echo "LABEL io.github.cli.gemini.version=\"${GEMINI_VERSION}\"" >> /opt/versions/labels.dockerfile
+
+LABEL io.github.cli.codex.version="see /opt/versions/codex.txt" \
+      io.github.cli.copilot.version="see /opt/versions/copilot.txt" \
+      io.github.cli.gemini.version="see /opt/versions/gemini.txt"
 
 CMD  ["/opt/entrypoint.sh"]
