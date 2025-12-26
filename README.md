@@ -126,9 +126,35 @@ See the [Dockerfile](Dockerfile) for the full package list and build steps.
 | -------------------------- | -------------------------------- | ----------------------------------- |
 | `CODEX_ENV_PYTHON_VERSION` | Python version to activate      | `3.12`, `3.13`, `3.14.0`            |
 
+### Extracting CLI versions from image
+
+CLI tool versions are captured during the build process and stored in the image. To check versions:
+
+```bash
+# View versions from a running container
+podman run --rm cli-universal:python3.12 cat /opt/versions/codex.txt
+podman run --rm cli-universal:python3.12 cat /opt/versions/copilot.txt
+podman run --rm cli-universal:python3.12 cat /opt/versions/gemini.txt
+
+# Or use the helper script
+./extract_versions.sh cli-universal:python3.12
+```
+
+Versions are also stored in image labels:
+```bash
+podman image inspect cli-universal:python3.12 --format '{{.Config.Labels}}'
+```
+
 ## Automated builds
 
-Pushes to `main` (or manual dispatches) will build and push multi-arch images to Docker Hub using GitHub Actions. Configure these repository settings before enabling the workflow:
+Pushes to `main` (or manual dispatches) will build and push multi-arch images to Docker Hub using GitHub Actions. The workflow automatically:
+
+1. Builds the multi-arch image
+2. Extracts CLI tool versions from the built image
+3. Updates the README with actual installed versions
+4. Pushes the updated README to Docker Hub
+
+Configure these repository settings before enabling the workflow:
 
 - Repository variable: `DOCKERHUB_IMAGE` (e.g., `your-dockerhub-username/cli-universal`)
 - Secrets: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`
@@ -137,3 +163,5 @@ The workflow publishes tags:
 
 - `latest`
 - `python3.12` (update the workflow `PYTHON_TAG` env if you change the default Python)
+
+The Docker Hub description will automatically reflect the actual CLI tool versions installed during the build.
