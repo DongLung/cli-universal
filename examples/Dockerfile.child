@@ -1,0 +1,27 @@
+# Example: Derived image from cli-universal
+# This shows how to create a custom image based on cli-universal
+
+FROM cli-universal:python3.12
+
+# Add your custom packages
+RUN dnf install -y vim nano && dnf clean all
+
+# Install additional Python packages
+RUN uv pip install --system pandas numpy requests
+
+# Add your application code
+COPY myapp/ /app/
+WORKDIR /app
+
+# Option 1: Keep the original entrypoint and menu behavior
+# No changes needed - inherits ENTRYPOINT from parent
+
+# Option 2: Skip the welcome message and menu, run your app directly
+# Uncomment the following lines:
+# ENV SKIP_WELCOME=1
+# ENTRYPOINT []
+# CMD ["python3", "/app/main.py"]
+
+# Option 3: Keep setup but change default behavior
+# Uncomment to launch directly into bash instead of menu:
+# ENV CLI_TOOL=bash

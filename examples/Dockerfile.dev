@@ -1,0 +1,25 @@
+# Example: Development image with additional tools
+# Keeps the interactive menu but adds dev tools
+
+FROM cli-universal:python3.12
+
+# Add development tools
+RUN dnf install -y \
+    vim \
+    nano \
+    tmux \
+    htop \
+    strace \
+    && dnf clean all
+
+# Install additional Python dev packages
+RUN HOME=/opt/uv uv tool install ipython \
+    && HOME=/opt/uv uv tool install jupyterlab
+
+# Set custom defaults via environment variables
+ENV DEFAULT_SELECTION=5
+ENV MENU_TIMEOUT=5
+
+# Keep the original entrypoint (menu behavior)
+# Users can override at runtime:
+#   podman run --rm mydev-image python3 script.py

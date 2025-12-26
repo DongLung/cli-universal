@@ -11,5 +11,17 @@ fi
 
 /opt/codex/setup_universal.sh
 
-echo "Environment ready. Dropping you into a bash shell."
-exec bash --login "$@"
+# If no arguments provided, show menu
+if [ $# -eq 0 ]; then
+    echo "Environment ready."
+    exec /opt/menu.sh
+# If first argument is -c, execute with bash -c
+elif [ "$1" = "-c" ]; then
+    echo "Environment ready."
+    shift
+    exec bash --login -c "$@"
+else
+    # If arguments provided, execute the command
+    echo "Environment ready."
+    exec "$@"
+fi

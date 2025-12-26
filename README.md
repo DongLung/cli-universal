@@ -165,3 +165,43 @@ The workflow publishes tags:
 - `python3.12` (update the workflow `PYTHON_TAG` env if you change the default Python)
 
 The Docker Hub description will automatically reflect the actual CLI tool versions installed during the build.
+
+## Using as a Base Image
+
+This image is designed to be used as a base for custom images. See the [examples/](examples/) directory for detailed examples of:
+
+- **Simple inheritance** - Adding packages while keeping menu behavior
+- **Application images** - Running apps directly, bypassing the menu
+- **Development environments** - Enhanced with additional tools
+
+### Quick Example
+
+```dockerfile
+FROM cli-universal:python3.12
+
+# Add your packages
+RUN dnf install -y vim && dnf clean all
+
+# Install Python dependencies
+RUN uv pip install --system pandas numpy
+
+# Add your code
+COPY myapp/ /app/
+WORKDIR /app
+
+# Option 1: Keep menu (default)
+# No changes needed
+
+# Option 2: Run app directly
+ENTRYPOINT []
+CMD ["python3", "main.py"]
+```
+
+### Key Points for Derived Images
+
+1. **Lock to specific version**: Use `FROM cli-universal:python3.12` not `:latest`
+2. **Override ENTRYPOINT**: Set `ENTRYPOINT []` to bypass the menu system
+3. **Use environment variables**: `CLI_TOOL`, `DEFAULT_SELECTION`, `MENU_TIMEOUT`
+4. **PATH is set**: Python and Node.js tools are already in PATH
+
+See [examples/README.md](examples/README.md) for comprehensive documentation.

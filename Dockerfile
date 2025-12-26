@@ -112,4 +112,5 @@ LABEL io.github.cli.codex.version="see /opt/versions/codex.txt" \
       io.github.cli.copilot.version="see /opt/versions/copilot.txt" \
       io.github.cli.gemini.version="see /opt/versions/gemini.txt"
 
-CMD  ["/opt/entrypoint.sh"]
+ENTRYPOINT ["/opt/entrypoint.sh"]
+CMD []
