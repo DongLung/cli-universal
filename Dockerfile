@@ -9,18 +9,18 @@ ENV HOME=/root
 ### BASE ###
 
 # First update ca-certificates and configure SSL to fix SSL issues
-RUN dnf install -y --setopt=sslverify=false ca-certificates \
-    && dnf update -y --setopt=sslverify=false ca-certificates \
+RUN dnf install -y ca-certificates \
+    && dnf update -y ca-certificates \
     && update-ca-trust \
     && dnf clean all
 
 # Install EPEL repository for additional packages
-RUN dnf install -y --setopt=sslverify=false --nogpgcheck \
+RUN dnf install -y \
     https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
     && dnf clean all
 
 # Install common utilities
-RUN dnf install -y --setopt=sslverify=false --allowerasing --nogpgcheck \
+RUN dnf install -y --allowerasing \
         curl \
         fd-find \
         fzf \
@@ -33,7 +33,7 @@ RUN dnf install -y --setopt=sslverify=false --allowerasing --nogpgcheck \
         unzip \
         xz \
         nodejs \
-    && dnf update -y --setopt=sslverify=false \
+    && dnf update -y \
     && dnf clean all
 
 ### COMMON CLI UTILITIES ###
