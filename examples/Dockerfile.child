@@ -4,7 +4,7 @@
 FROM cli-universal:python3.12
 
 # Add your custom packages
-RUN dnf install -y vim nano && dnf clean all
+RUN apt-get update && apt-get install -y vim nano && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install additional Python packages
 RUN uv pip install --system pandas numpy requests

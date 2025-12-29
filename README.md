@@ -1,21 +1,21 @@
 # cli-universal
 
-`cli-universal` is a slim base image tuned for the GitHub Copilot CLI, Gemini CLI, and Codex CLI flows. Built on Red Hat Universal Base Image (UBI) 10 for enhanced security and enterprise-grade stability, it ships only the runtimes those tools need (Python via uv and Node.js) plus essential shell utilities.
+`cli-universal` is a slim base image tuned for the GitHub Copilot CLI, Gemini CLI, and Codex CLI flows. Built on Debian Bookworm with Node.js 22 for optimal compatibility, it ships only the runtimes those tools need (Python via uv and Node.js 22+) plus essential shell utilities.
 
-## Why Red Hat UBI 10?
+## Why Debian Bookworm with Node.js 22?
 
-- **Security First**: Red Hat UBI receives timely security patches and has fewer vulnerabilities compared to Ubuntu base images
-- **Enterprise Support**: Backed by Red Hat's enterprise-grade quality and long-term support
-- **Minimal Attack Surface**: Removed unnecessary development libraries and C language build tools to reduce security exposure
-- **Production Ready**: Optimized for runtime execution rather than compilation, keeping the image lean and secure
+- **Modern Node.js**: Pre-installed Node.js 22+ meets GitHub Copilot CLI requirements (requires Node.js 22+)
+- **Stable Foundation**: Debian Bookworm provides a stable, well-tested base with long-term support
+- **Minimal Footprint**: Slim variant keeps the image lean while including essential tools
+- **Wide Compatibility**: Debian's extensive package ecosystem makes it easy to extend
 
 ## Runtimes and tools
 
 | Runtime / tool | Details |
 | --- | --- |
-| Base Image | Red Hat Universal Base Image (UBI) 10 |
+| Base Image | node:22-bookworm-slim (Debian 12 with Node.js 22) |
 | Python | 3.12 / 3.13 / 3.14 (installed via `uv`; default symlinked to `python3`) |
-| Node.js | From Red Hat UBI 10 repositories (enterprise-supported) |
+| Node.js | 22.x (pre-installed from official Node.js Docker image) |
 | Python Tools | `poetry`, `ruff`, `black`, `mypy`, `pyright`, `isort`, `pytest` (via uv) |
 | Common CLI | `uv`, `fzf`, `ripgrep`, `git`, `curl`, `jq`, `fd-find`, etc. |
 
@@ -57,17 +57,17 @@ podman run --rm -it \
 
 ### Bundled versions:
 
-- **Base**: Red Hat Universal Base Image (UBI) 10
+- **Base**: node:22-bookworm-slim (Debian 12 with Node.js 22)
 - **Python**: 3.12, 3.13, 3.14.0 (via `uv` - portable Python installations)
-- **Node.js**: From Red Hat UBI 10 repositories (version managed by Red Hat)
+- **Node.js**: 22.x (pre-installed, meets Copilot CLI requirements)
 - **Python Tools**: poetry 2.1.x, ruff, black, mypy, pyright, isort, pytest
 
-### Security Features:
+### Image Features:
 
-- No C/C++ compilers or build tools included (removed gcc, make, cmake, etc.)
-- No development libraries (-devel packages removed)
-- Minimal package footprint for reduced attack surface
-- Regular security updates from Red Hat
+- Minimal Debian Bookworm slim base for reduced size
+- No C/C++ compilers or build tools included
+- Only runtime dependencies installed
+- Regular security updates from Debian and Node.js official images
 
 Recommended tag format: `cli-universal:python<version>` (e.g., `cli-universal:python3.12`).
 
@@ -180,7 +180,7 @@ This image is designed to be used as a base for custom images. See the [examples
 FROM cli-universal:python3.12
 
 # Add your packages
-RUN dnf install -y vim && dnf clean all
+RUN apt-get update && apt-get install -y vim && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 RUN uv pip install --system pandas numpy

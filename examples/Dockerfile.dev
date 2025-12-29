@@ -4,13 +4,13 @@
 FROM cli-universal:python3.12
 
 # Add development tools
-RUN dnf install -y \
+RUN apt-get update && apt-get install -y \
     vim \
     nano \
     tmux \
     htop \
     strace \
-    && dnf clean all
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install additional Python dev packages
 RUN HOME=/opt/uv uv tool install ipython \

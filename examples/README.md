@@ -89,7 +89,7 @@ FROM cli-universal:python3.12  # 推薦：鎖定特定版本
 
 4. **用戶權限**：父映像檔使用 root，如需改變請在子映像檔中設置
 
-5. **清理緩存**：安裝套件後記得清理：`dnf clean all` 或 `apt clean`
+5. **清理緩存**：安裝套件後記得清理：`apt-get clean && rm -rf /var/lib/apt/lists/*`
 
 ## 測試繼承行為
 
