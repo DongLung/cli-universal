@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi9:latest
+FROM node:22-bookworm-slim
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -8,33 +8,25 @@ ENV HOME=/root
 
 ### BASE ###
 
-# First update ca-certificates and configure SSL to fix SSL issues
-RUN dnf install -y ca-certificates \
-    && dnf update -y ca-certificates \
-    && update-ca-trust \
-    && dnf clean all
-
-# Install EPEL repository for additional packages
-RUN dnf install -y \
-    https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm \
-    && dnf clean all
-
 # Install common utilities
-RUN dnf install -y --allowerasing \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
         curl \
-        fd-find \
-        fzf \
-        iputils \
-        ripgrep \
+        ca-certificates \
         git \
         jq \
-        openssh-clients \
-        sqlite \
         unzip \
-        xz \
-        nodejs \
-    && dnf update -y \
-    && dnf clean all
+        xz-utils \
+        sqlite3 \
+        fd-find \
+        ripgrep \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install fzf separately (not available in Debian slim repos)
+RUN git clone --depth 1 https://github.com/junegunn/fzf.git /opt/fzf \
+    && /opt/fzf/install --bin \
+    && ln -s /opt/fzf/bin/fzf /usr/local/bin/fzf
 
 ### COMMON CLI UTILITIES ###
 
@@ -87,7 +79,7 @@ RUN npm install -g --no-fund \
 ### FINAL SECURITY UPDATE ###
 
 # Apply all security updates one more time
-RUN dnf update -y && dnf clean all
+RUN apt-get update && apt-get upgrade -y && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ### SETUP SCRIPTS ###
 
