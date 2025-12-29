@@ -38,13 +38,13 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 
 ########################################
-# Volumes
+# Host directories (mounted into container)
 ########################################
-VOL_NPM_GLOBAL="${VOL_NPM_GLOBAL:-npm-global}"
-VOL_NPM_CACHE="${VOL_NPM_CACHE:-npm-cache}"
-VOL_CODEX_HOME="${VOL_CODEX_HOME:-ai-codex-home}"
-VOL_COPILOT_HOME="${VOL_COPILOT_HOME:-ai-copilot-home}"
-VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-ai-gemini-home}"
+VOL_NPM_GLOBAL="${VOL_NPM_GLOBAL:-$HOME/.npm-global}"
+VOL_NPM_CACHE="${VOL_NPM_CACHE:-$HOME/.npm-cache}"
+VOL_CODEX_HOME="${VOL_CODEX_HOME:-$HOME/.codex}"
+VOL_COPILOT_HOME="${VOL_COPILOT_HOME:-$HOME/.copilot}"
+VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-$HOME/.gemini}"
 
 ########################################
 # Preflight
@@ -52,15 +52,8 @@ VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-ai-gemini-home}"
 command -v podman >/dev/null 2>&1 || { echo "ERROR: podman 不存在"; exit 1; }
 [ -d "$HOST_DIR" ] || { echo "ERROR: HOST_DIR 不存在：$HOST_DIR"; exit 1; }
 
-ensure_volume() {
-  podman volume exists "$1" >/dev/null 2>&1 || podman volume create "$1" >/dev/null
-}
-
-ensure_volume "$VOL_NPM_GLOBAL"
-ensure_volume "$VOL_NPM_CACHE"
-ensure_volume "$VOL_CODEX_HOME"
-ensure_volume "$VOL_COPILOT_HOME"
-ensure_volume "$VOL_GEMINI_HOME"
+# Ensure host directories exist
+mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
 
 ########################################
 # Image tag rotation (optional backup)

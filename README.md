@@ -36,11 +36,11 @@ podman run --rm -it \
   -e OPENAI_API_KEY="your-openai-api-key" \
   -p 1455:1455 \
   -v /etc/localtime:/etc/localtime:ro \
-  -v npm-global:/opt/npm-global \
-  -v npm-cache:/opt/npm-cache \
-  -v ai-codex-home:/root/.codex \
-  -v ai-copilot-home:/root/.copilot \
-  -v ai-gemini-home:/root/.gemini \
+  -v ~/.npm-global:/opt/npm-global \
+  -v ~/.npm-cache:/opt/npm-cache \
+  -v ~/.codex:/root/.codex \
+  -v ~/.copilot:/root/.copilot \
+  -v ~/.gemini:/root/.gemini \
   -v $(pwd):/workspace/$(basename $(pwd)) \
   -w /workspace/$(basename $(pwd)) \
   cli-universal:python3.12
