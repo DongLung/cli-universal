@@ -53,7 +53,7 @@ command -v podman >/dev/null 2>&1 || { echo "ERROR: podman 不存在"; exit 1; }
 [ -d "$HOST_DIR" ] || { echo "ERROR: HOST_DIR 不存在：$HOST_DIR"; exit 1; }
 
 # Ensure host directories exist
-mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
+mkdir -p "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
 
 ########################################
 # Image tag rotation (optional backup)
@@ -76,9 +76,7 @@ fi
 POST_SETUP_CMD='
   set -e
 
-  # npm global settings (to avoid NPM_CONFIG_PREFIX conflicts)
-  npm config --global set prefix /opt/npm-global
-  npm config --global set cache  /opt/npm-cache
+  # PATH already includes /opt/npm-global/bin from Dockerfile
   export PATH="/opt/npm-global/bin:$PATH"
 
   # Function to show menu and handle selection
@@ -252,8 +250,6 @@ podman run --rm -it \
   ${GEMINI_API_KEY:+-e "GEMINI_API_KEY=$GEMINI_API_KEY"} \
   -p 1455:1455 \
   -v /etc/localtime:/etc/localtime:ro \
-  -v "${VOL_NPM_GLOBAL}:/opt/npm-global" \
-  -v "${VOL_NPM_CACHE}:/opt/npm-cache" \
   -v "${VOL_CODEX_HOME}:/root/.codex" \
   -v "${VOL_COPILOT_HOME}:/root/.copilot" \
   -v "${VOL_GEMINI_HOME}:/root/.gemini" \

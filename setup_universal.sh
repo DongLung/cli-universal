@@ -12,8 +12,11 @@ echo "Configuring language runtimes..."
 
 if [ -n "${CODEX_ENV_PYTHON_VERSION}" ]; then
     echo "# Python: ${CODEX_ENV_PYTHON_VERSION}"
-    uv python install "${CODEX_ENV_PYTHON_VERSION}"
-    PYTHON_DEFAULT_PATH="$(uv python find "${CODEX_ENV_PYTHON_VERSION}")"
+    # Use the same HOME as build time to avoid re-downloading
+    export UV_HOME=/opt/uv
+    export PATH=$UV_HOME/.local/bin:$PATH
+    HOME=/opt/uv uv python install "${CODEX_ENV_PYTHON_VERSION}" >/dev/null 2>&1 || true
+    PYTHON_DEFAULT_PATH="$(HOME=/opt/uv uv python find "${CODEX_ENV_PYTHON_VERSION}")"
     ln -sf "${PYTHON_DEFAULT_PATH}" /usr/local/bin/python3
 fi
 
