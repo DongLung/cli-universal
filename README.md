@@ -58,6 +58,31 @@ podman run --rm -it \
     (default) - Interactive menu to choose tool
 ```
 
+### Launcher script (`run_cli_universal.sh`)
+
+Use the launcher for local runs with sensible defaults:
+
+```bash
+# Interactive menu (default)
+./run_cli_universal.sh
+
+# Start a specific CLI directly
+CLI_TOOL=copilot ./run_cli_universal.sh
+```
+
+The script passes `CLI_TOOL` into the container, mounts npm global/cache dirs at `/opt/npm-global` and `/opt/npm-cache`, and mounts CLI config dirs under `/home/cliuser/*`.
+
+| Variable | Meaning |
+| --- | --- |
+| `CLI_TOOL` | Tool to start: `codex`, `copilot`, `gemini`, `bash`, or empty for the menu. |
+| `CODEX_ENV_PYTHON_VERSION` | Python version used in image tag and passed to the container (default: `3.12`). |
+| `HOST_DIR` | Host workspace directory mounted into `/workspace/<dirname>` (default: current directory). |
+| `VOL_NPM_GLOBAL` | Host directory mounted to `/opt/npm-global` (default: `~/.npm-global`). |
+| `VOL_NPM_CACHE` | Host directory mounted to `/opt/npm-cache` (default: `~/.npm-cache`). |
+| `VOL_CODEX_HOME` | Host Codex config directory mounted to `/home/cliuser/.codex` (default: `~/.codex`). |
+| `VOL_COPILOT_HOME` | Host Copilot config directory mounted to `/home/cliuser/.copilot` (default: `~/.copilot`). |
+| `VOL_GEMINI_HOME` | Host Gemini config directory mounted to `/home/cliuser/.gemini` (default: `~/.gemini`). |
+
 ## Building
 
 ### Bundled versions:

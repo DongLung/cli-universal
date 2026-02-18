@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   DOCKERHUB_IMAGE: ${{ vars.DOCKERHUB_IMAGE }}
   PYTHON_TAG: python3.12
@@ -63,8 +66,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          provenance: false
-          sbom: false
+          provenance: true
+          sbom: true
 
       - name: Extract CLI versions from image
         id: versions

@@ -53,7 +53,7 @@ command -v podman >/dev/null 2>&1 || { echo "ERROR: podman 不存在"; exit 1; }
 [ -d "$HOST_DIR" ] || { echo "ERROR: HOST_DIR 不存在：$HOST_DIR"; exit 1; }
 
 # Ensure host directories exist
-mkdir -p "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
+mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
 
 ########################################
 # Image tag rotation (optional backup)
@@ -73,15 +73,7 @@ fi
 ########################################
 # Post-setup hook (runs after entrypoint)
 ########################################
-POST_SETUP_CMD='
-  set -e
-
-  # Export CLI_TOOL for menu.sh to use
-  export CLI_TOOL="'"$CLI_TOOL"'"
-  
-  # Call the canonical menu.sh implementation
-  exec /opt/menu.sh
-'
+POST_SETUP_CMD='exec /opt/menu.sh'
 
 ########################################
 # Run
@@ -110,14 +102,17 @@ echo ""
 
 podman run --rm -it \
   -e CODEX_ENV_PYTHON_VERSION="$CODEX_ENV_PYTHON_VERSION" \
+  -e CLI_TOOL="$CLI_TOOL" \
   ${OPENAI_API_KEY:+-e "OPENAI_API_KEY=$OPENAI_API_KEY"} \
   ${GITHUB_TOKEN:+-e "GITHUB_TOKEN=$GITHUB_TOKEN"} \
   ${GEMINI_API_KEY:+-e "GEMINI_API_KEY=$GEMINI_API_KEY"} \
   -p 1455:1455 \
   -v /etc/localtime:/etc/localtime:ro \
-  -v "${VOL_CODEX_HOME}:/root/.codex" \
-  -v "${VOL_COPILOT_HOME}:/root/.copilot" \
-  -v "${VOL_GEMINI_HOME}:/root/.gemini" \
+  -v "${VOL_NPM_GLOBAL}:/opt/npm-global" \
+  -v "${VOL_NPM_CACHE}:/opt/npm-cache" \
+  -v "${VOL_CODEX_HOME}:/home/cliuser/.codex" \
+  -v "${VOL_COPILOT_HOME}:/home/cliuser/.copilot" \
+  -v "${VOL_GEMINI_HOME}:/home/cliuser/.gemini" \
   -v "${HOST_DIR}:${WORKDIR}" \
   -w "${WORKDIR}" \
   "$IMAGE" \
