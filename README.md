@@ -8,6 +8,7 @@
 - **Stable Foundation**: Debian Bookworm provides a stable, well-tested base with long-term support
 - **Minimal Footprint**: Slim variant keeps the image lean while including essential tools
 - **Wide Compatibility**: Debian's extensive package ecosystem makes it easy to extend
+- **Security**: Runs as non-root user (UID 1000) with minimal privileges
 
 ## Runtimes and tools
 
@@ -27,6 +28,10 @@ The entrypoint honors these environment variables at runtime:
 
 Timezone automatically follows the host if `/etc/timezone` is mounted.
 
+## Security
+
+The image runs as a non-root user (`cliuser`, UID 1000) by default for enhanced security. All CLI tools, Python environments, and npm packages are installed with appropriate permissions for the non-root user. Volume mounts should target `/home/cliuser` for configuration directories.
+
 ## Running the image
 
 ```bash
@@ -38,9 +43,9 @@ podman run --rm -it \
   -v /etc/localtime:/etc/localtime:ro \
   -v ~/.npm-global:/opt/npm-global \
   -v ~/.npm-cache:/opt/npm-cache \
-  -v ~/.codex:/root/.codex \
-  -v ~/.copilot:/root/.copilot \
-  -v ~/.gemini:/root/.gemini \
+  -v ~/.codex:/home/cliuser/.codex \
+  -v ~/.copilot:/home/cliuser/.copilot \
+  -v ~/.gemini:/home/cliuser/.gemini \
   -v $(pwd):/workspace/$(basename $(pwd)) \
   -w /workspace/$(basename $(pwd)) \
   cli-universal:python3.12
@@ -68,6 +73,8 @@ podman run --rm -it \
 - No C/C++ compilers or build tools included
 - Only runtime dependencies installed
 - Regular security updates from Debian and Node.js official images
+- Runs as non-root user (`cliuser`, UID 1000) for enhanced security
+- OCI-compliant security labels for metadata tracking
 
 Recommended tag format: `cli-universal:python<version>` (e.g., `cli-universal:python3.12`).
 

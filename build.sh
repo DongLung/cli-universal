@@ -1,7 +1,11 @@
 #!/bin/bash
-set -e
-
-# Build script for cli-universal image
+set -euo pipefail
+#
+# Build Script
+# Description: Builds cli-universal Docker/Podman image with specified platform and tags
+# Usage: ./build.sh or PLATFORM=linux/arm64 TAG=python3.13 ./build.sh
+# Environment: PLATFORM (default: linux/amd64), TAG (default: python3.12), VERSION (default: latest)
+#
 
 PLATFORM="${PLATFORM:-linux/amd64}"
 TAG="${TAG:-python3.12}"
@@ -20,7 +24,7 @@ else
 fi
 
 echo "Using ${TOOL}..."
-${TOOL} build --platform "${PLATFORM}" \
+"${TOOL}" build --platform "${PLATFORM}" \
     -f Dockerfile \
     -t "${IMAGE_NAME}:${TAG}" \
     -t "${IMAGE_NAME}:${VERSION}" \
@@ -32,7 +36,7 @@ echo "Images tagged:"
 echo "  - ${IMAGE_NAME}:${TAG}"
 echo "  - ${IMAGE_NAME}:${VERSION}"
 echo "  - ${IMAGE_NAME}:latest"
-echo "Size: $(${TOOL} images ${IMAGE_NAME}:${TAG} --format '{{.Size}}')"
+echo "Size: $("${TOOL}" images "${IMAGE_NAME}:${TAG}" --format '{{.Size}}')"
 echo ""
 echo "Test with:"
 echo "  ${TOOL} run --rm ${IMAGE_NAME}:${TAG} -c 'python3 --version'"

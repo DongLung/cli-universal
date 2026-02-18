@@ -1,4 +1,11 @@
 #!/bin/bash
+set -euo pipefail
+#
+# Entrypoint Script
+# Description: Container entrypoint that configures environment and launches CLI tools or commands
+# Usage: Automatically invoked by Docker/Podman; supports direct commands or -c flag for bash execution
+# Environment: TZ (optional, auto-detected from /etc/timezone if not set)
+#
 
 echo "=================================="
 echo "Welcome to openai/codex-universal!"
@@ -12,11 +19,11 @@ fi
 /opt/codex/setup_universal.sh
 
 # If no arguments provided, show menu
-if [ $# -eq 0 ]; then
+if [ ${#} -eq 0 ]; then
     echo "Environment ready."
     exec /opt/menu.sh
 # If first argument is -c, execute with bash -c
-elif [ "$1" = "-c" ]; then
+elif [ "${1}" = "-c" ]; then
     echo "Environment ready."
     shift
     exec bash --login -c "$@"

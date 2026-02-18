@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Extract CLI tool versions from built image
+#
+# Version Extractor
+# Description: Extracts and displays CLI tool versions from a built container image
+# Usage: ./extract_versions.sh [image-name] (default: cli-universal:python3.12)
+#
 
 set -euo pipefail
 
@@ -21,9 +25,9 @@ fi
 echo "Using runtime: ${RUNTIME}"
 echo ""
 
-CODEX_VERSION=$(${RUNTIME} run --rm "${IMAGE}" cat /opt/versions/codex.txt 2>/dev/null | head -n1 || echo "unknown")
-COPILOT_VERSION=$(${RUNTIME} run --rm "${IMAGE}" cat /opt/versions/copilot.txt 2>/dev/null | head -n1 || echo "unknown")
-GEMINI_VERSION=$(${RUNTIME} run --rm "${IMAGE}" cat /opt/versions/gemini.txt 2>/dev/null | head -n1 || echo "unknown")
+CODEX_VERSION=$("${RUNTIME}" run --rm "${IMAGE}" cat /opt/versions/codex.txt 2>/dev/null | head -n1 || echo "unknown")
+COPILOT_VERSION=$("${RUNTIME}" run --rm "${IMAGE}" cat /opt/versions/copilot.txt 2>/dev/null | head -n1 || echo "unknown")
+GEMINI_VERSION=$("${RUNTIME}" run --rm "${IMAGE}" cat /opt/versions/gemini.txt 2>/dev/null | head -n1 || echo "unknown")
 
 echo "Detected CLI versions:"
 echo "  Codex CLI:          ${CODEX_VERSION}"
@@ -33,4 +37,4 @@ echo ""
 
 # Also show from image labels
 echo "Image labels:"
-${RUNTIME} image inspect "${IMAGE}" --format '{{range $k, $v := .Config.Labels}}{{if or (eq $k "io.github.cli.codex.version") (eq $k "io.github.cli.copilot.version") (eq $k "io.github.cli.gemini.version")}}  {{$k}}: {{$v}}{{println}}{{end}}{{end}}' 2>/dev/null || echo "  (labels not available)"
+"${RUNTIME}" image inspect "${IMAGE}" --format '{{range $k, $v := .Config.Labels}}{{if or (eq $k "io.github.cli.codex.version") (eq $k "io.github.cli.copilot.version") (eq $k "io.github.cli.gemini.version")}}  {{$k}}: {{$v}}{{println}}{{end}}{{end}}' 2>/dev/null || echo "  (labels not available)"

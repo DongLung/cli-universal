@@ -1,4 +1,11 @@
 #!/usr/bin/env bash
+#
+# Interactive Menu
+# Description: Presents interactive menu for selecting and launching CLI tools (codex, copilot, gemini, bash)
+# Usage: Called by entrypoint.sh or run directly; use CLI_TOOL env var to skip menu
+# Environment: CLI_TOOL, DEFAULT_SELECTION (default: 3), MENU_TIMEOUT (default: 10)
+#
+
 set -euo pipefail
 
 # Default CLI tool when none is selected via menu timeout
@@ -13,7 +20,12 @@ configure_npm() {
 }
 
 launch_cli() {
-  case "$1" in
+  local tool="${1:-}"
+  if [ -z "${tool}" ]; then
+    echo "Error: No CLI tool specified"; exit 1
+  fi
+  
+  case "${tool}" in
     codex)
       if command -v codex >/dev/null 2>&1; then
         exec codex
@@ -39,7 +51,7 @@ launch_cli() {
       echo "Entering Bash shell..."; exec bash
       ;;
     *)
-      echo "Unknown CLI_TOOL: $1"; echo "Valid options: codex, copilot, gemini, bash"; exit 1
+      echo "Unknown CLI_TOOL: ${tool}"; echo "Valid options: codex, copilot, gemini, bash"; exit 1
       ;;
   esac
 }
@@ -59,15 +71,15 @@ show_menu() {
     echo ""
 
     echo -n "Select option (default: ${DEFAULT_SELECTION} in ${MENU_TIMEOUT}s): "
-    if read -t "$MENU_TIMEOUT" -r choice && [ -n "${choice:-}" ]; then
+    if read -t "${MENU_TIMEOUT}" -r choice && [ -n "${choice:-}" ]; then
       echo ""
     else
       echo ""
       echo "[timeout] No selection made, starting Copilot CLI..."
-      choice="$DEFAULT_SELECTION"
+      choice="${DEFAULT_SELECTION}"
     fi
 
-    case "$choice" in
+    case "${choice}" in
       1)
         echo "[update] Updating codex / copilot / gemini ..."
         npm i -g --no-fund --loglevel=error \
@@ -102,8 +114,8 @@ main() {
 
   echo ""
   echo "[cli] Available CLI tools: codex, copilot, gemini, bash"
-  if [ -n "$CLI_TOOL" ]; then
-    echo "[cli] Starting with: $CLI_TOOL"
+  if [ -n "${CLI_TOOL}" ]; then
+    echo "[cli] Starting with: ${CLI_TOOL}"
     echo ""
     echo "[versions]"
     python --version 2>/dev/null || echo "Python: not configured"
@@ -113,7 +125,7 @@ main() {
     copilot --version 2>/dev/null || echo "copilot: not installed"
     gemini --version 2>/dev/null  || echo "gemini: not installed"
     echo ""
-    launch_cli "$CLI_TOOL"
+    launch_cli "${CLI_TOOL}"
   else
     echo "[cli] No CLI_TOOL specified; showing menu"
     show_menu
