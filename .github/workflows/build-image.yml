@@ -66,6 +66,20 @@ jobs:
             "$IMAGE_REF" \
             -c 'test -f .smoke && pwd && python3 --version && node --version'
 
+      - name: Build and smoke OpenClaw sandbox (amd64, PR only)
+        if: ${{ github.event_name != 'push' }}
+        env:
+          BASE_IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:amd64-${{ github.sha }}
+          OPENCLAW_IMAGE_REF: openclaw-sandbox:amd64-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker build --platform linux/amd64 \
+            -f Dockerfile.openclaw-sandbox \
+            --build-arg BASE_IMAGE="$BASE_IMAGE_REF" \
+            -t "$OPENCLAW_IMAGE_REF" .
+          docker run --rm "$OPENCLAW_IMAGE_REF" bash -lc \
+            'test "$(whoami)" = "sandbox" && test "$(pwd)" = "/workspace" && codex --version && copilot --version && gemini --version'
+
   build-arm64:
     runs-on: ubuntu-24.04-arm
     outputs:

@@ -7,6 +7,7 @@
 #
 
 set -euo pipefail
+export PATH="/opt/npm-global/bin:${PATH}"
 
 echo "Verifying language runtimes ..."
 

@@ -105,6 +105,50 @@ EXTRA_VOLUMES="$HOME/.ssh:/home/cliuser/.ssh:ro;copilot-cache:/home/cliuser/.cac
 | `NPM_GLOBAL_PREFIX` | npm global install prefix inside container. Defaults to `/opt/npm-global`, with auto-fallback to `/home/cliuser/.npm-global` if not writable. |
 | `NPM_CACHE_DIR` | npm cache path inside container. Defaults to `/opt/npm-cache`, with auto-fallback to `/home/cliuser/.npm-cache` if not writable. |
 
+## OpenClaw Sandbox Compatibility
+
+This repo now includes an OpenClaw-compatible sandbox variant image that can replace the default OpenClaw sandbox image.
+
+### Build OpenClaw variant
+
+```bash
+# 1) Build the base image first
+./build.sh
+
+# 2) Build the OpenClaw-compatible sandbox variant
+./build_openclaw_sandbox.sh
+```
+
+By default this builds both `linux/amd64` and `linux/arm64` variants and runs smoke tests.
+
+Generated tags:
+
+- `cli-universal:openclaw-sandbox-amd64`
+- `cli-universal:openclaw-sandbox-arm64`
+- `cli-universal:openclaw-sandbox` (attempted local manifest list when supported)
+
+It uses [`Dockerfile.openclaw-sandbox`](Dockerfile.openclaw-sandbox). The variant:
+
+- uses a non-root `sandbox` user
+- sets `WORKDIR /workspace`
+- clears the interactive entrypoint (`ENTRYPOINT []`)
+- keeps the container alive with `CMD ["sleep", "infinity"]`
+- hardens PATH discovery for `codex` / `copilot` / `gemini` in login shells (`sh -lc`)
+
+### OpenClaw config example
+
+Use this image in your OpenClaw configuration:
+
+```toml
+[agents.defaults.sandbox.docker]
+enabled = true
+image = "your-registry/cli-universal:openclaw-sandbox"
+workdir = "/workspace"
+command = ["sleep", "infinity"]
+```
+
+If you publish to a registry, push `openclaw-sandbox` as a multi-arch manifest so OpenClaw can pull the correct architecture automatically.
+
 ## Building
 
 ### Bundled versions:

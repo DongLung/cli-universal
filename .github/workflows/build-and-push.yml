@@ -85,6 +85,43 @@ jobs:
             "$IMAGE" \
             -c 'test -f .smoke && pwd && whoami'
 
+      - name: Build and push OpenClaw sandbox image
+        uses: docker/build-push-action@v6
+        id: build_openclaw
+        with:
+          context: .
+          file: ./Dockerfile.openclaw-sandbox
+          build-args: |
+            BASE_IMAGE=${{ env.DOCKERHUB_IMAGE }}:${{ env.PYTHON_TAG }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_IMAGE }}:openclaw-sandbox
+            ${{ env.DOCKERHUB_IMAGE }}:openclaw-sandbox-${{ env.PYTHON_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+      - name: Smoke test OpenClaw sandbox image (amd64 + arm64)
+        run: |
+          set -euo pipefail
+          IMAGE="${DOCKERHUB_IMAGE}:openclaw-sandbox"
+          docker pull "$IMAGE"
+          for platform in linux/amd64 linux/arm64; do
+            echo "[smoke] ${platform}"
+            docker run --rm --platform "${platform}" "$IMAGE" bash -lc \
+              'test "$(whoami)" = "sandbox" && test "$(pwd)" = "/workspace" && codex --version && copilot --version && gemini --version'
+            tmp_workspace="$(mktemp -d)"
+            echo "smoke" > "$tmp_workspace/.smoke"
+            docker run --rm --platform "${platform}" \
+              -v "$tmp_workspace:/workspace" \
+              -w /workspace \
+              "$IMAGE" bash -lc \
+              'test -f /workspace/.smoke && test "$(cat /workspace/.smoke)" = "smoke"'
+            rm -rf "$tmp_workspace"
+          done
+
       - name: Extract CLI versions from image
         id: versions
         run: |

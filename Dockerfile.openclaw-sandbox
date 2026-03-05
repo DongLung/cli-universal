@@ -1,0 +1,28 @@
+ARG BASE_IMAGE=cli-universal:python3.12
+FROM ${BASE_IMAGE}
+
+USER root
+
+# OpenClaw sandbox containers are expected to stay alive and accept exec'd commands.
+# Create a dedicated non-root user and writable workspace, then disable menu entrypoint.
+RUN if ! id -u sandbox >/dev/null 2>&1; then \
+      useradd -m -s /bin/bash sandbox; \
+    fi && \
+    mkdir -p /workspace && \
+    chown -R sandbox:sandbox /workspace /home/sandbox && \
+    printf '%s\n' 'export PATH="/opt/npm-global/bin:${PATH}"' > /etc/profile.d/opt-npm-global-path.sh && \
+    chmod 0644 /etc/profile.d/opt-npm-global-path.sh && \
+    ln -sf /opt/npm-global/bin/codex /usr/local/bin/codex && \
+    ln -sf /opt/npm-global/bin/copilot /usr/local/bin/copilot && \
+    ln -sf /opt/npm-global/bin/gemini /usr/local/bin/gemini
+
+LABEL io.openclaw.sandbox.compatible="true" \
+      io.openclaw.sandbox.default-workdir="/workspace" \
+      io.openclaw.sandbox.default-command="sleep infinity"
+
+ENTRYPOINT []
+
+USER sandbox
+ENV HOME=/home/sandbox
+WORKDIR /workspace
+CMD ["sleep", "infinity"]
