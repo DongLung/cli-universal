@@ -69,6 +69,22 @@ jobs:
           provenance: true
           sbom: true
 
+      - name: Smoke test published image
+        run: |
+          set -euo pipefail
+          IMAGE="${DOCKERHUB_IMAGE}:latest"
+          docker pull "$IMAGE"
+          docker run --rm "$IMAGE" -c 'codex --version && copilot --version && gemini --version'
+          tmp_workspace="$(mktemp -d)"
+          trap 'rm -rf "$tmp_workspace"' EXIT
+          echo "smoke" > "$tmp_workspace/.smoke"
+          docker run --rm \
+            -e CLI_TOOL=bash \
+            -v "$tmp_workspace:/workspace/smoke" \
+            -w /workspace/smoke \
+            "$IMAGE" \
+            -c 'test -f .smoke && pwd && whoami'
+
       - name: Extract CLI versions from image
         id: versions
         run: |

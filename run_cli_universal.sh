@@ -40,11 +40,17 @@ GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 ########################################
 # Host mount policy
 ########################################
-ENABLE_EXTRA_HOST_MOUNTS="${ENABLE_EXTRA_HOST_MOUNTS:-0}"  # 1: legacy host cache/config mounts
+ENABLE_EXTRA_HOST_MOUNTS="${ENABLE_EXTRA_HOST_MOUNTS:-0}"  # 1: legacy toggle (maps to MOUNT_PROFILE=full)
+MOUNT_PROFILE="${MOUNT_PROFILE:-}"  # minimal | dev | full
 EXTRA_VOLUMES="${EXTRA_VOLUMES:-}"  # Semicolon-separated: SRC:DST[:OPTIONS]
 PODMAN_USERNS_MODE="${PODMAN_USERNS_MODE:-keep-id}"
 NPM_GLOBAL_PREFIX="${NPM_GLOBAL_PREFIX:-}"
 NPM_CACHE_DIR="${NPM_CACHE_DIR:-}"
+VOL_NPM_GLOBAL="${VOL_NPM_GLOBAL:-$HOME/.npm-global}"
+VOL_NPM_CACHE="${VOL_NPM_CACHE:-$HOME/.npm-cache}"
+VOL_CODEX_HOME="${VOL_CODEX_HOME:-$HOME/.codex}"
+VOL_COPILOT_HOME="${VOL_COPILOT_HOME:-$HOME/.copilot}"
+VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-$HOME/.gemini}"
 
 trim_whitespace() {
   local value="${1:-}"
@@ -97,24 +103,41 @@ add_custom_mount() {
 }
 
 EXTRA_MOUNT_ARGS=()
-if [ "$ENABLE_EXTRA_HOST_MOUNTS" = "1" ]; then
-  VOL_NPM_GLOBAL="${VOL_NPM_GLOBAL:-$HOME/.npm-global}"
-  VOL_NPM_CACHE="${VOL_NPM_CACHE:-$HOME/.npm-cache}"
-  VOL_CODEX_HOME="${VOL_CODEX_HOME:-$HOME/.codex}"
-  VOL_COPILOT_HOME="${VOL_COPILOT_HOME:-$HOME/.copilot}"
-  VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-$HOME/.gemini}"
-
-  mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
-
-  EXTRA_MOUNT_ARGS=(
-    -v /etc/localtime:/etc/localtime:ro
-    -v "${VOL_NPM_GLOBAL}:/opt/npm-global"
-    -v "${VOL_NPM_CACHE}:/opt/npm-cache"
-    -v "${VOL_CODEX_HOME}:/home/cliuser/.codex"
-    -v "${VOL_COPILOT_HOME}:/home/cliuser/.copilot"
-    -v "${VOL_GEMINI_HOME}:/home/cliuser/.gemini"
-  )
+if [ -z "$MOUNT_PROFILE" ]; then
+  if [ "$ENABLE_EXTRA_HOST_MOUNTS" = "1" ]; then
+    MOUNT_PROFILE="full"
+  else
+    MOUNT_PROFILE="minimal"
+  fi
 fi
+
+case "$MOUNT_PROFILE" in
+  minimal)
+    ;;
+  dev)
+    mkdir -p "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
+    EXTRA_MOUNT_ARGS=(
+      -v "${VOL_CODEX_HOME}:/home/cliuser/.codex"
+      -v "${VOL_COPILOT_HOME}:/home/cliuser/.copilot"
+      -v "${VOL_GEMINI_HOME}:/home/cliuser/.gemini"
+    )
+    ;;
+  full)
+    mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
+    EXTRA_MOUNT_ARGS=(
+      -v /etc/localtime:/etc/localtime:ro
+      -v "${VOL_NPM_GLOBAL}:/opt/npm-global"
+      -v "${VOL_NPM_CACHE}:/opt/npm-cache"
+      -v "${VOL_CODEX_HOME}:/home/cliuser/.codex"
+      -v "${VOL_COPILOT_HOME}:/home/cliuser/.copilot"
+      -v "${VOL_GEMINI_HOME}:/home/cliuser/.gemini"
+    )
+    ;;
+  *)
+    echo "ERROR: Unsupported MOUNT_PROFILE=$MOUNT_PROFILE (expected: minimal, dev, full)"
+    exit 1
+    ;;
+esac
 
 if [ -n "$EXTRA_VOLUMES" ]; then
   EXTRA_VOLUMES="${EXTRA_VOLUMES//$'\n'/;}"
@@ -165,11 +188,7 @@ echo "  Python=$CODEX_ENV_PYTHON_VERSION"
 if [ -n "$BACKUP_TAG" ]; then
   echo "[run] Existing image preserved as: $BACKUP_TAG"
 fi
-if [ "$ENABLE_EXTRA_HOST_MOUNTS" = "1" ]; then
-  echo "[run] Extra host mounts: enabled"
-else
-  echo "[run] Extra host mounts: disabled (workspace-only)"
-fi
+echo "[run] Mount profile: $MOUNT_PROFILE"
 if [ "${#CUSTOM_MOUNT_ARGS[@]}" -gt 0 ]; then
   echo "[run] Custom extra mounts: enabled ($(( ${#CUSTOM_MOUNT_ARGS[@]} / 2 )) entries)"
 fi

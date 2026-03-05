@@ -40,14 +40,31 @@ jobs:
         with:
           platforms: linux/amd64
           push: ${{ github.event_name == 'push' }}
+          load: ${{ github.event_name != 'push' }}
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:amd64-${{ github.sha }}
           # Use GHA cache only (works on PRs). Swap to registry cache on pushes if you prefer.
           cache-from: type=gha,scope=${{ github.workflow }}-${{ runner.os }}-amd64
           cache-to:   type=gha,mode=min,scope=${{ github.workflow }}-${{ runner.os }}-amd64
-          provenance: true
-          sbom: true
+          provenance: ${{ github.event_name == 'push' }}
+          sbom: ${{ github.event_name == 'push' }}
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke test (amd64 image)
+        env:
+          IMAGE_REF: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:amd64-${{ github.sha }}
+        run: |
+          set -euo pipefail
+          docker run --rm "$IMAGE_REF" -c 'codex --version && copilot --version && gemini --version'
+          tmp_workspace="$(mktemp -d)"
+          trap 'rm -rf "$tmp_workspace"' EXIT
+          echo "smoke" > "$tmp_workspace/.smoke"
+          docker run --rm \
+            -e CLI_TOOL=bash \
+            -v "$tmp_workspace:/workspace/smoke" \
+            -w /workspace/smoke \
+            "$IMAGE_REF" \
+            -c 'test -f .smoke && pwd && python3 --version && node --version'
 
   build-arm64:
     runs-on: ubuntu-24.04-arm
@@ -75,8 +92,8 @@ jobs:
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:arm64-${{ github.sha }}
           cache-from: type=gha,scope=${{ github.workflow }}-${{ runner.os }}-arm64
           cache-to:   type=gha,mode=min,scope=${{ github.workflow }}-${{ runner.os }}-arm64
-          provenance: true
-          sbom: true
+          provenance: ${{ github.event_name == 'push' }}
+          sbom: ${{ github.event_name == 'push' }}
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
 

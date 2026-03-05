@@ -38,7 +38,7 @@ Default runtime behavior:
 
 - Mount one external workspace folder (`HOST_DIR`, default: current directory)
 - Run inside the mounted workspace (`/workspace/<dirname>`)
-- No extra host config/cache mounts unless explicitly enabled
+- Use `MOUNT_PROFILE=minimal` by default (workspace-only)
 - Optional custom mounts via `EXTRA_VOLUMES`
 
 ```bash
@@ -78,6 +78,10 @@ The script passes `CLI_TOOL` into the container, mounts only `HOST_DIR` at `/wor
 # Opt in to legacy host cache/config mounts
 ENABLE_EXTRA_HOST_MOUNTS=1 ./run_cli_universal.sh
 
+# Use mount profiles
+MOUNT_PROFILE=dev ./run_cli_universal.sh   # persist codex/copilot/gemini auth dirs
+MOUNT_PROFILE=full ./run_cli_universal.sh  # include npm global/cache + timezone mount
+
 # Add custom mounts (semicolon-separated)
 # Format: SRC:DST[:OPTIONS]
 EXTRA_VOLUMES="$HOME/.ssh:/home/cliuser/.ssh:ro;copilot-cache:/home/cliuser/.cache/copilot" \
@@ -89,14 +93,15 @@ EXTRA_VOLUMES="$HOME/.ssh:/home/cliuser/.ssh:ro;copilot-cache:/home/cliuser/.cac
 | `CLI_TOOL` | Tool to start: `codex`, `copilot`, `gemini`, `bash`, or empty for the menu. |
 | `CODEX_ENV_PYTHON_VERSION` | Python version used in image tag and passed to the container (default: `3.12`). |
 | `HOST_DIR` | Host workspace directory mounted into `/workspace/<dirname>` (default: current directory). |
-| `ENABLE_EXTRA_HOST_MOUNTS` | Set to `1` to restore legacy host mounts for `/etc/localtime`, npm cache/global, and CLI config dirs (default: `0`). |
+| `MOUNT_PROFILE` | Mount strategy: `minimal` (workspace-only), `dev` (mount `~/.codex`, `~/.copilot`, `~/.gemini`), `full` (adds npm global/cache and `/etc/localtime`). Default: `minimal`. |
+| `ENABLE_EXTRA_HOST_MOUNTS` | Legacy compatibility switch. If set to `1` and `MOUNT_PROFILE` is unset, it behaves like `MOUNT_PROFILE=full`. |
 | `EXTRA_VOLUMES` | Extra volume mounts passed to Podman. Use semicolon-separated `SRC:DST[:OPTIONS]` entries. Supports bind mounts and named volumes. |
 | `PODMAN_USERNS_MODE` | Podman user namespace mode passed as `--userns` (default: `keep-id`; set empty to disable). |
-| `VOL_NPM_GLOBAL` | Host directory mounted to `/opt/npm-global` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.npm-global`). |
-| `VOL_NPM_CACHE` | Host directory mounted to `/opt/npm-cache` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.npm-cache`). |
-| `VOL_CODEX_HOME` | Host Codex config directory mounted to `/home/cliuser/.codex` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.codex`). |
-| `VOL_COPILOT_HOME` | Host Copilot config directory mounted to `/home/cliuser/.copilot` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.copilot`). |
-| `VOL_GEMINI_HOME` | Host Gemini config directory mounted to `/home/cliuser/.gemini` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.gemini`). |
+| `VOL_CODEX_HOME` | Host Codex config directory mounted to `/home/cliuser/.codex` for `dev`/`full` profiles (default: `~/.codex`). |
+| `VOL_COPILOT_HOME` | Host Copilot config directory mounted to `/home/cliuser/.copilot` for `dev`/`full` profiles (default: `~/.copilot`). |
+| `VOL_GEMINI_HOME` | Host Gemini config directory mounted to `/home/cliuser/.gemini` for `dev`/`full` profiles (default: `~/.gemini`). |
+| `VOL_NPM_GLOBAL` | Host directory mounted to `/opt/npm-global` for `full` profile (default: `~/.npm-global`). |
+| `VOL_NPM_CACHE` | Host directory mounted to `/opt/npm-cache` for `full` profile (default: `~/.npm-cache`). |
 | `NPM_GLOBAL_PREFIX` | npm global install prefix inside container. Defaults to `/opt/npm-global`, with auto-fallback to `/home/cliuser/.npm-global` if not writable. |
 | `NPM_CACHE_DIR` | npm cache path inside container. Defaults to `/opt/npm-cache`, with auto-fallback to `/home/cliuser/.npm-cache` if not writable. |
 
