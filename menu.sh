@@ -3,7 +3,8 @@
 # Interactive Menu
 # Description: Presents interactive menu for selecting and launching CLI tools (codex, copilot, gemini, bash)
 # Usage: Called by entrypoint.sh or run directly; use CLI_TOOL env var to skip menu
-# Environment: CLI_TOOL, DEFAULT_SELECTION (default: 3), MENU_TIMEOUT (default: 10)
+# Environment: CLI_TOOL, DEFAULT_SELECTION (default: 3), MENU_TIMEOUT (default: 10),
+#              NPM_GLOBAL_PREFIX, NPM_CACHE_DIR
 #
 
 set -euo pipefail
@@ -14,9 +15,19 @@ MENU_TIMEOUT="${MENU_TIMEOUT:-10}"
 CLI_TOOL="${CLI_TOOL:-}"  # Options: codex, copilot, gemini, bash; empty shows menu
 
 configure_npm() {
-  npm config --global set prefix /opt/npm-global
-  npm config --global set cache  /opt/npm-cache
-  export PATH="/opt/npm-global/bin:$PATH"
+  local prefix="${NPM_GLOBAL_PREFIX:-/opt/npm-global}"
+  local cache="${NPM_CACHE_DIR:-/opt/npm-cache}"
+
+  if ! mkdir -p "$prefix" "$cache" 2>/dev/null || [ ! -w "$prefix" ] || [ ! -w "$cache" ]; then
+    prefix="${HOME}/.npm-global"
+    cache="${HOME}/.npm-cache"
+    mkdir -p "$prefix" "$cache"
+    echo "[npm] Falling back to user-writable paths: prefix=${prefix}, cache=${cache}"
+  fi
+
+  npm config --global set prefix "$prefix"
+  npm config --global set cache "$cache"
+  export PATH="$prefix/bin:/opt/npm-global/bin:$PATH"
 }
 
 launch_cli() {

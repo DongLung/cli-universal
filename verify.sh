@@ -23,6 +23,11 @@ echo "- Node.js:"
 node --version
 npm --version
 
+echo "- AI CLI tools:"
+codex --version
+copilot --version
+gemini --version
+
 echo "- CLI utilities:"
 rg --version
 fzf --version

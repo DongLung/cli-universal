@@ -34,20 +34,22 @@ The image runs as a non-root user (`cliuser`, UID 1000) by default for enhanced 
 
 ## Running the image
 
+Default runtime behavior:
+
+- Mount one external workspace folder (`HOST_DIR`, default: current directory)
+- Run inside the mounted workspace (`/workspace/<dirname>`)
+- No extra host config/cache mounts unless explicitly enabled
+- Optional custom mounts via `EXTRA_VOLUMES`
+
 ```bash
 podman run --rm -it \
   -e CLI_TOOL=codex \
   -e CODEX_ENV_PYTHON_VERSION=3.12 \
   -e OPENAI_API_KEY="your-openai-api-key" \
+  --userns=keep-id \
   -p 1455:1455 \
-  -v /etc/localtime:/etc/localtime:ro \
-  -v ~/.npm-global:/opt/npm-global \
-  -v ~/.npm-cache:/opt/npm-cache \
-  -v ~/.codex:/home/cliuser/.codex \
-  -v ~/.copilot:/home/cliuser/.copilot \
-  -v ~/.gemini:/home/cliuser/.gemini \
-  -v $(pwd):/workspace/$(basename $(pwd)) \
-  -w /workspace/$(basename $(pwd)) \
+  -v "$(pwd):/workspace/$(basename "$(pwd)")" \
+  -w "/workspace/$(basename "$(pwd)")" \
   cli-universal:python3.12
 
   CLI_TOOL options:
@@ -70,18 +72,33 @@ Use the launcher for local runs with sensible defaults:
 CLI_TOOL=copilot ./run_cli_universal.sh
 ```
 
-The script passes `CLI_TOOL` into the container, mounts npm global/cache dirs at `/opt/npm-global` and `/opt/npm-cache`, and mounts CLI config dirs under `/home/cliuser/*`.
+The script passes `CLI_TOOL` into the container, mounts only `HOST_DIR` at `/workspace/<dirname>`, and runs inside that directory by default.
+
+```bash
+# Opt in to legacy host cache/config mounts
+ENABLE_EXTRA_HOST_MOUNTS=1 ./run_cli_universal.sh
+
+# Add custom mounts (semicolon-separated)
+# Format: SRC:DST[:OPTIONS]
+EXTRA_VOLUMES="$HOME/.ssh:/home/cliuser/.ssh:ro;copilot-cache:/home/cliuser/.cache/copilot" \
+  ./run_cli_universal.sh
+```
 
 | Variable | Meaning |
 | --- | --- |
 | `CLI_TOOL` | Tool to start: `codex`, `copilot`, `gemini`, `bash`, or empty for the menu. |
 | `CODEX_ENV_PYTHON_VERSION` | Python version used in image tag and passed to the container (default: `3.12`). |
 | `HOST_DIR` | Host workspace directory mounted into `/workspace/<dirname>` (default: current directory). |
-| `VOL_NPM_GLOBAL` | Host directory mounted to `/opt/npm-global` (default: `~/.npm-global`). |
-| `VOL_NPM_CACHE` | Host directory mounted to `/opt/npm-cache` (default: `~/.npm-cache`). |
-| `VOL_CODEX_HOME` | Host Codex config directory mounted to `/home/cliuser/.codex` (default: `~/.codex`). |
-| `VOL_COPILOT_HOME` | Host Copilot config directory mounted to `/home/cliuser/.copilot` (default: `~/.copilot`). |
-| `VOL_GEMINI_HOME` | Host Gemini config directory mounted to `/home/cliuser/.gemini` (default: `~/.gemini`). |
+| `ENABLE_EXTRA_HOST_MOUNTS` | Set to `1` to restore legacy host mounts for `/etc/localtime`, npm cache/global, and CLI config dirs (default: `0`). |
+| `EXTRA_VOLUMES` | Extra volume mounts passed to Podman. Use semicolon-separated `SRC:DST[:OPTIONS]` entries. Supports bind mounts and named volumes. |
+| `PODMAN_USERNS_MODE` | Podman user namespace mode passed as `--userns` (default: `keep-id`; set empty to disable). |
+| `VOL_NPM_GLOBAL` | Host directory mounted to `/opt/npm-global` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.npm-global`). |
+| `VOL_NPM_CACHE` | Host directory mounted to `/opt/npm-cache` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.npm-cache`). |
+| `VOL_CODEX_HOME` | Host Codex config directory mounted to `/home/cliuser/.codex` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.codex`). |
+| `VOL_COPILOT_HOME` | Host Copilot config directory mounted to `/home/cliuser/.copilot` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.copilot`). |
+| `VOL_GEMINI_HOME` | Host Gemini config directory mounted to `/home/cliuser/.gemini` when `ENABLE_EXTRA_HOST_MOUNTS=1` (default: `~/.gemini`). |
+| `NPM_GLOBAL_PREFIX` | npm global install prefix inside container. Defaults to `/opt/npm-global`, with auto-fallback to `/home/cliuser/.npm-global` if not writable. |
+| `NPM_CACHE_DIR` | npm cache path inside container. Defaults to `/opt/npm-cache`, with auto-fallback to `/home/cliuser/.npm-cache` if not writable. |
 
 ## Building
 

@@ -38,22 +38,102 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GEMINI_API_KEY="${GEMINI_API_KEY:-}"
 
 ########################################
-# Host directories (mounted into container)
+# Host mount policy
 ########################################
-VOL_NPM_GLOBAL="${VOL_NPM_GLOBAL:-$HOME/.npm-global}"
-VOL_NPM_CACHE="${VOL_NPM_CACHE:-$HOME/.npm-cache}"
-VOL_CODEX_HOME="${VOL_CODEX_HOME:-$HOME/.codex}"
-VOL_COPILOT_HOME="${VOL_COPILOT_HOME:-$HOME/.copilot}"
-VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-$HOME/.gemini}"
+ENABLE_EXTRA_HOST_MOUNTS="${ENABLE_EXTRA_HOST_MOUNTS:-0}"  # 1: legacy host cache/config mounts
+EXTRA_VOLUMES="${EXTRA_VOLUMES:-}"  # Semicolon-separated: SRC:DST[:OPTIONS]
+PODMAN_USERNS_MODE="${PODMAN_USERNS_MODE:-keep-id}"
+NPM_GLOBAL_PREFIX="${NPM_GLOBAL_PREFIX:-}"
+NPM_CACHE_DIR="${NPM_CACHE_DIR:-}"
+
+trim_whitespace() {
+  local value="${1:-}"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+CUSTOM_MOUNT_ARGS=()
+add_custom_mount() {
+  local raw_spec="${1:-}"
+  local spec source remainder target options
+
+  spec="$(trim_whitespace "$raw_spec")"
+  [ -z "$spec" ] && return 0
+
+  if [[ "$spec" != *:* ]]; then
+    echo "ERROR: EXTRA_VOLUMES entry must be SRC:DST[:OPTIONS], got: $spec"
+    exit 1
+  fi
+
+  source="${spec%%:*}"
+  remainder="${spec#*:}"
+  if [[ "$remainder" == *:* ]]; then
+    target="${remainder%%:*}"
+    options="${remainder#*:}"
+  else
+    target="$remainder"
+    options=""
+  fi
+
+  source="$(trim_whitespace "$source")"
+  target="$(trim_whitespace "$target")"
+  options="$(trim_whitespace "$options")"
+
+  if [ -z "$source" ] || [ -z "$target" ]; then
+    echo "ERROR: EXTRA_VOLUMES entry has empty source or target: $spec"
+    exit 1
+  fi
+
+  if [[ "$source" == "~/"* ]]; then
+    source="${HOME}/${source#~/}"
+  fi
+
+  if [ -n "$options" ]; then
+    CUSTOM_MOUNT_ARGS+=(-v "${source}:${target}:${options}")
+  else
+    CUSTOM_MOUNT_ARGS+=(-v "${source}:${target}")
+  fi
+}
+
+EXTRA_MOUNT_ARGS=()
+if [ "$ENABLE_EXTRA_HOST_MOUNTS" = "1" ]; then
+  VOL_NPM_GLOBAL="${VOL_NPM_GLOBAL:-$HOME/.npm-global}"
+  VOL_NPM_CACHE="${VOL_NPM_CACHE:-$HOME/.npm-cache}"
+  VOL_CODEX_HOME="${VOL_CODEX_HOME:-$HOME/.codex}"
+  VOL_COPILOT_HOME="${VOL_COPILOT_HOME:-$HOME/.copilot}"
+  VOL_GEMINI_HOME="${VOL_GEMINI_HOME:-$HOME/.gemini}"
+
+  mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
+
+  EXTRA_MOUNT_ARGS=(
+    -v /etc/localtime:/etc/localtime:ro
+    -v "${VOL_NPM_GLOBAL}:/opt/npm-global"
+    -v "${VOL_NPM_CACHE}:/opt/npm-cache"
+    -v "${VOL_CODEX_HOME}:/home/cliuser/.codex"
+    -v "${VOL_COPILOT_HOME}:/home/cliuser/.copilot"
+    -v "${VOL_GEMINI_HOME}:/home/cliuser/.gemini"
+  )
+fi
+
+if [ -n "$EXTRA_VOLUMES" ]; then
+  EXTRA_VOLUMES="${EXTRA_VOLUMES//$'\n'/;}"
+  IFS=';' read -r -a EXTRA_VOLUME_SPECS <<< "$EXTRA_VOLUMES"
+  for EXTRA_VOLUME_SPEC in "${EXTRA_VOLUME_SPECS[@]}"; do
+    add_custom_mount "$EXTRA_VOLUME_SPEC"
+  done
+fi
+
+PODMAN_USERNS_ARGS=()
+if [ -n "$PODMAN_USERNS_MODE" ]; then
+  PODMAN_USERNS_ARGS=(--userns="$PODMAN_USERNS_MODE")
+fi
 
 ########################################
 # Preflight
 ########################################
 command -v podman >/dev/null 2>&1 || { echo "ERROR: podman 不存在"; exit 1; }
 [ -d "$HOST_DIR" ] || { echo "ERROR: HOST_DIR 不存在：$HOST_DIR"; exit 1; }
-
-# Ensure host directories exist
-mkdir -p "$VOL_NPM_GLOBAL" "$VOL_NPM_CACHE" "$VOL_CODEX_HOME" "$VOL_COPILOT_HOME" "$VOL_GEMINI_HOME"
 
 ########################################
 # Image tag rotation (optional backup)
@@ -85,6 +165,14 @@ echo "  Python=$CODEX_ENV_PYTHON_VERSION"
 if [ -n "$BACKUP_TAG" ]; then
   echo "[run] Existing image preserved as: $BACKUP_TAG"
 fi
+if [ "$ENABLE_EXTRA_HOST_MOUNTS" = "1" ]; then
+  echo "[run] Extra host mounts: enabled"
+else
+  echo "[run] Extra host mounts: disabled (workspace-only)"
+fi
+if [ "${#CUSTOM_MOUNT_ARGS[@]}" -gt 0 ]; then
+  echo "[run] Custom extra mounts: enabled ($(( ${#CUSTOM_MOUNT_ARGS[@]} / 2 )) entries)"
+fi
 echo ""
 echo "[cli] Available CLI tools:"
 echo "  - Codex   : CLI_TOOL=codex ./run_cli_universal.sh"
@@ -103,16 +191,15 @@ echo ""
 podman run --rm -it \
   -e CODEX_ENV_PYTHON_VERSION="$CODEX_ENV_PYTHON_VERSION" \
   -e CLI_TOOL="$CLI_TOOL" \
+  ${NPM_GLOBAL_PREFIX:+-e "NPM_GLOBAL_PREFIX=$NPM_GLOBAL_PREFIX"} \
+  ${NPM_CACHE_DIR:+-e "NPM_CACHE_DIR=$NPM_CACHE_DIR"} \
   ${OPENAI_API_KEY:+-e "OPENAI_API_KEY=$OPENAI_API_KEY"} \
   ${GITHUB_TOKEN:+-e "GITHUB_TOKEN=$GITHUB_TOKEN"} \
   ${GEMINI_API_KEY:+-e "GEMINI_API_KEY=$GEMINI_API_KEY"} \
   -p 1455:1455 \
-  -v /etc/localtime:/etc/localtime:ro \
-  -v "${VOL_NPM_GLOBAL}:/opt/npm-global" \
-  -v "${VOL_NPM_CACHE}:/opt/npm-cache" \
-  -v "${VOL_CODEX_HOME}:/home/cliuser/.codex" \
-  -v "${VOL_COPILOT_HOME}:/home/cliuser/.copilot" \
-  -v "${VOL_GEMINI_HOME}:/home/cliuser/.gemini" \
+  "${PODMAN_USERNS_ARGS[@]}" \
+  "${EXTRA_MOUNT_ARGS[@]}" \
+  "${CUSTOM_MOUNT_ARGS[@]}" \
   -v "${HOST_DIR}:${WORKDIR}" \
   -w "${WORKDIR}" \
   "$IMAGE" \

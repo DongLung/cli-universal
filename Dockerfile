@@ -70,11 +70,11 @@ RUN install -d -m 0755 "$UV_HOME" && \
 ### NODE.js CLI TOOLS ###
 
 ENV NPM_CONFIG_PREFIX=/opt/npm-global
+ENV NPM_CONFIG_CACHE=/opt/npm-cache
 ENV PATH=/opt/npm-global/bin:$PATH
 
 # Install Codex, Copilot, and Gemini CLI tools with version capture
-RUN mkdir -p /opt/npm-global /opt/versions && \
-    chown -R cliuser:cliuser /opt/npm-global /opt/versions && \
+RUN mkdir -p /opt/npm-global /opt/npm-cache /opt/versions && \
     npm install -g --no-fund \
         @openai/codex@latest \
         @github/copilot@latest \
@@ -82,7 +82,8 @@ RUN mkdir -p /opt/npm-global /opt/versions && \
     npm cache clean --force && \
     codex --version > /opt/versions/codex.txt 2>&1 || echo "unknown" > /opt/versions/codex.txt && \
     copilot --version > /opt/versions/copilot.txt 2>&1 || echo "unknown" > /opt/versions/copilot.txt && \
-    gemini --version > /opt/versions/gemini.txt 2>&1 || echo "unknown" > /opt/versions/gemini.txt
+    gemini --version > /opt/versions/gemini.txt 2>&1 || echo "unknown" > /opt/versions/gemini.txt && \
+    chown -R cliuser:cliuser /opt/npm-global /opt/npm-cache /opt/versions
 
 ### FINAL SECURITY UPDATE ###
 
